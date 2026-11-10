@@ -1,0 +1,13 @@
+<?php
+
+it('reports the API as healthy', function () {
+    $this->getJson('/api/health')
+        ->assertOk()
+        ->assertExactJson([
+            'status' => 'ok',
+            'checks' => [
+                'app_key' => true,
+                'storage_writable' => true,
+            ],
+        ]);
+});
