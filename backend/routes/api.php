@@ -1,9 +1,10 @@
 <?php
 
+use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\MeController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/health', fn () => response()->json(['status' => 'ok']));
+Route::get('/health', HealthController::class);
 
 Route::middleware('auth.clerk')->group(function (): void {
     Route::get('/me', MeController::class);

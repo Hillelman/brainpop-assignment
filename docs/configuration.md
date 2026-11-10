@@ -6,6 +6,8 @@ Every environment variable of the backend and frontend, and where each one goes.
 
 - [Where variables live](#where-variables-live)
 - [Backend variables](#backend-variables)
+- [Defaults when variables are missing](#defaults-when-variables-are-missing)
+- [Health checks](#health-checks)
 - [Frontend variables](#frontend-variables)
 - [E2E-only variables](#e2e-only-variables)
 - [No database](#no-database)
@@ -40,6 +42,35 @@ Defined in `backend/.env.example`. Only the app-specific ones and the ones that 
 | `SESSION_DRIVER` | Session driver (the API is stateless) | `array` | no | `array` |
 | `QUEUE_CONNECTION` | Queue driver | `sync` | no | `sync` |
 | `LOG_LEVEL` | Minimum log level | `debug` | no | `info` |
+
+## Defaults when variables are missing
+
+The backend boots with no `.env` file, or an empty one. Every setting the API uses has a safe default:
+
+| Setting | Default |
+| --- | --- |
+| `APP_ENV` | `local` |
+| `APP_DEBUG` | `false` |
+| `CACHE_STORE` | `file` |
+| `SESSION_DRIVER` | `file` (the API never uses sessions) |
+| `QUEUE_CONNECTION` | `sync` |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` |
+| `LOG_CHANNEL` | `stack` (single file) |
+| `JSON_STORAGE_PATH` | `backend/storage/app/data` |
+| `CLERK_AUTHORIZED_PARTIES` | empty (allowed, but a weaker check) |
+| `CLERK_ISSUER` | empty (issuer check skipped) |
+
+`APP_KEY` and `CLERK_JWKS_URL` have no usable default. Without them authenticated routes return `503` (`app_not_configured`, `auth_not_configured`); see [Troubleshooting](troubleshooting.md#503-from-the-api-not-configured).
+
+## Health checks
+
+`GET /api/health` always returns `200` and reports booleans only, so you can see what is missing without exposing values:
+
+```json
+{ "status": "ok", "checks": { "app_key": true, "clerk": true, "storage_writable": true } }
+```
+
+`app_key` is true when `APP_KEY` is set, `clerk` when `CLERK_JWKS_URL` is set, and `storage_writable` when the JSON storage directory (or the nearest existing parent) is writable.
 
 ## Frontend variables
 
