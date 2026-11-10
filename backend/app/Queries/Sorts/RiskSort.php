@@ -4,6 +4,7 @@ namespace App\Queries\Sorts;
 
 use App\Domain\Entities\Item;
 use App\Queries\Sorts\Contracts\Sort;
+use Illuminate\Support\Collection;
 
 class RiskSort implements Sort
 {
@@ -16,6 +17,8 @@ class RiskSort implements Sort
     {
         return 'Risk';
     }
+
+    public function prepare(Collection $items): void {}
 
     public function value(Item $item): ?int
     {

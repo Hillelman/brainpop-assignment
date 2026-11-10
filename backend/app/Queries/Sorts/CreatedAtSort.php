@@ -4,6 +4,7 @@ namespace App\Queries\Sorts;
 
 use App\Domain\Entities\Item;
 use App\Queries\Sorts\Contracts\Sort;
+use Illuminate\Support\Collection;
 
 class CreatedAtSort implements Sort
 {
@@ -16,6 +17,8 @@ class CreatedAtSort implements Sort
     {
         return 'Created';
     }
+
+    public function prepare(Collection $items): void {}
 
     public function value(Item $item): int
     {

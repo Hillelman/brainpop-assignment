@@ -163,7 +163,7 @@ it('lists registered filters and sorts', function () {
     $response = $this->getJson('/api/items/filters')->assertOk();
 
     expect(array_column($response->json('filters'), 'key'))->toBe(['status', 'risk', 'submitter', 'created_from', 'created_to'])
-        ->and(array_column($response->json('sorts'), 'key'))->toBe(['created_at', 'updated_at', 'title', 'risk'])
+        ->and(array_column($response->json('sorts'), 'key'))->toBe(['created_at', 'updated_at', 'title', 'risk', 'status', 'submitter'])
         ->and($response->json('filters.0.options'))->toContain(['value' => 'pending', 'label' => 'Pending'])
         ->and($response->json('filters.3.type'))->toBe('date');
 });

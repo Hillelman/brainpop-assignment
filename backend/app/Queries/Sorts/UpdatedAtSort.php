@@ -4,6 +4,7 @@ namespace App\Queries\Sorts;
 
 use App\Domain\Entities\Item;
 use App\Queries\Sorts\Contracts\Sort;
+use Illuminate\Support\Collection;
 
 class UpdatedAtSort implements Sort
 {
@@ -16,6 +17,8 @@ class UpdatedAtSort implements Sort
     {
         return 'Updated';
     }
+
+    public function prepare(Collection $items): void {}
 
     public function value(Item $item): int
     {

@@ -75,6 +75,7 @@ class ItemQuery
             return $items;
         }
         $direction = $descending ? -1 : 1;
+        $strategy->prepare($items);
 
         return $items->sort(function (Item $a, Item $b) use ($strategy, $direction): int {
             $left = $strategy->value($a);

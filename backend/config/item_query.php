@@ -7,6 +7,8 @@ use App\Queries\Filters\StatusFilter;
 use App\Queries\Filters\SubmitterFilter;
 use App\Queries\Sorts\CreatedAtSort;
 use App\Queries\Sorts\RiskSort;
+use App\Queries\Sorts\StatusSort;
+use App\Queries\Sorts\SubmitterSort;
 use App\Queries\Sorts\TitleSort;
 use App\Queries\Sorts\UpdatedAtSort;
 
@@ -27,5 +29,7 @@ return [
         UpdatedAtSort::class,
         TitleSort::class,
         RiskSort::class,
+        StatusSort::class,
+        SubmitterSort::class,
     ],
 ];
