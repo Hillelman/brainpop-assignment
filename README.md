@@ -1,13 +1,14 @@
 # Review Queue
 
-Review Queue is a small full-stack app where signed-in users submit items to a review queue and review them, one at a time or in bulk: approve or reject, assign a risk level and add an optional note. The backend is a Laravel REST API that stores its data in plain JSON files (no database), the frontend is a Vue 3 single-page app, and sign-in is handled by [Clerk](https://clerk.com).
+Review Queue is a small full-stack app where people submit items to a review queue and review them, one at a time or in bulk: approve or reject, assign a risk level and add an optional note. There is no sign-in: the app is open, and submitters and reviewers are identified only by the name they type (see [Identity and names](docs/identity-and-names.md)). The backend is a Laravel REST API that stores its data in plain JSON files (no database), and the frontend is a Vue 3 single-page app.
 
 Features:
 
-- Sign in with Clerk; every API call is authenticated with the session token.
-- Submit items (title and description) to the queue.
-- Queue view with Pending / Reviewed / All tabs, search, filters, sorting and pagination, all kept in the URL so views are shareable.
-- Bulk approve or reject with an optional risk level and note, with clear partial-failure reporting.
+- Open access with named submitters and reviewers: type your name when you submit or review; no accounts, keys or tokens.
+- Submit items (name, title and description) to the queue.
+- Queue view showing all items, with a Status filter, search, filters (including Submitter), sorting by clicking the column headers (Title, Status, Risk, Submitter, Created) and pagination, all kept in the URL so views are shareable.
+- Bulk approve or reject with a reviewer name, an optional risk level and note, with clear partial-failure reporting.
+- A person cannot review an item they submitted; such items are skipped and reported.
 - Item detail page with the full review history and a copyable link.
 - Pluggable filters and sorts: add one with a class and a config line.
 
@@ -17,47 +18,43 @@ Features:
 | --- | --- |
 | Backend | PHP 8.4+, Laravel, Pest, Pint, JSON file storage |
 | Frontend | Vue 3, Vite, TypeScript, Pinia, Vue Router, Tailwind CSS, shadcn-vue |
-| Auth | Clerk (`@clerk/vue` in the SPA, JWKS verification in the API) |
+| Identity | Typed names, no authentication (see [Identity and names](docs/identity-and-names.md)) |
 | Tests | Pest (backend), Vitest (frontend), Playwright (end to end) |
 
 ## Prerequisites
 
 - PHP 8.4+ and Composer: `brew install php composer`
 - Node.js 20.19+ and [pnpm](https://pnpm.io)
-- A Clerk development instance and one test user (see [Authentication](docs/authentication.md)). The E2E suite signs in as that user.
 
-## Install
+No accounts, API keys or environment variables are needed.
+
+## Install and run
 
 ```bash
 make install
+make dev
 ```
 
-This installs Composer and pnpm dependencies, copies the `.env.example` files to `backend/.env` and `frontend/.env` when they do not exist, runs `php artisan key:generate` and installs the Playwright Chromium browser. The equivalent manual steps:
+`make install` installs Composer and pnpm dependencies, creates `backend/.env` from `backend/.env.example` when it is missing and generates an `APP_KEY` only when it is empty (an existing key is never overwritten), creates `frontend/.env` when missing, seeds demo data when there is none and installs the Playwright Chromium browser. `make dev` runs the same `.env` and key check, seeds demo data when there is none, and starts both servers. The path from a fresh clone is just `make install` then `make dev`, with no keys and no manual `.env` editing. Real `.env` files are git-ignored and must never be committed. See [Configuration](docs/configuration.md).
+
+The equivalent manual steps:
 
 ```bash
+sh scripts/ensure-backend-env.sh
+
 cd backend
 composer install
-cp .env.example .env
-php artisan key:generate
+php artisan app:seed-json --if-empty
 
 cd ../frontend
 pnpm install
 cp .env.example .env
 ```
 
-Then fill in the Clerk values in `backend/.env` and `frontend/.env` (see [Configuration](docs/configuration.md)). Real `.env` files are git-ignored and must never be committed.
-
-Optionally load demo data (about 50 items in mixed states):
+To reset the demo data (about 50 items in mixed states), which is also the recommended fix for old data from earlier versions:
 
 ```bash
-cd backend
-php artisan app:seed-json
-```
-
-## Run
-
-```bash
-make dev
+php backend/artisan app:seed-json --fresh
 ```
 
 | Service | URL |
@@ -70,7 +67,7 @@ make dev
 
 ```bash
 make test   # backend Pest tests, then frontend Vitest tests
-make e2e    # Playwright end-to-end suite (needs Clerk variables)
+make e2e    # Playwright end-to-end suite (no keys or sign-in needed)
 ```
 
 Other shortcuts: `make lint`, `make format`, `make typecheck`. See [Testing](docs/testing.md) for details.
@@ -79,10 +76,10 @@ Other shortcuts: `make lint`, `make format`, `make typecheck`. See [Testing](doc
 
 ```text
 backend/
-  app/          Auth, Console, Domain, DTOs, Enums, Exceptions, Http, Models,
-                Providers, Queries, Repositories, Services, Storage
+  app/          Console, Domain, DTOs, Enums, Exceptions, Http, Models,
+                Providers, Queries, Repositories, Services, Storage, Support
   bootstrap/    Application bootstrap and the JSON error contract (app.php)
-  config/       Laravel config, clerk.php, item_query.php, storage_json.php
+  config/       Laravel config, item_query.php, storage_json.php
   routes/       api.php and api/items.php
   storage/      JSON data files live in storage/app/data
   tests/        Feature, Unit, Support
@@ -96,22 +93,22 @@ frontend/
 
 ### Using the app
 
-- [User guide](docs/user-guide.md): signing in, submitting, the queue, bulk review and the item page.
+- [User guide](docs/user-guide.md): submitting, the queue and sorting, bulk review and the item page.
 
 ### API
 
 - [Endpoints](docs/endpoints.md): every endpoint with parameters, responses and `curl` examples.
 - [Errors](docs/errors.md): the error contract, status and code table, and how the UI shows each.
-- [Authentication](docs/authentication.md): Clerk setup and how tokens are verified and attached.
 - [Filters and sorting](docs/filters-and-sorting.md): the registry, current filters and sorts, and how to add your own.
 
 ### Architecture
 
 - [Architecture](docs/architecture.md): backend and frontend layers and the request flow.
 - [Data model](docs/data-model.md): JSON files, fields, enums, atomic writes and locking.
+- [Identity and names](docs/identity-and-names.md): how typed names identify people, normalization, the self-review rule and the security note.
 
 ### Development
 
 - [Configuration](docs/configuration.md): every environment variable and where it goes.
-- [Testing](docs/testing.md): test layers, helpers, E2E prerequisites and debugging.
+- [Testing](docs/testing.md): test layers, helpers, how the E2E suite runs and debugging.
 - [Troubleshooting](docs/troubleshooting.md): common problems and fixes.

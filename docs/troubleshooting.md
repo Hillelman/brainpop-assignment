@@ -6,15 +6,15 @@ Common problems and how to fix them.
 
 - [vendor/autoload.php is missing](#vendorautoloadphp-is-missing)
 - [A port is already in use](#a-port-is-already-in-use)
-- [Redirect loop between the queue and sign-in](#redirect-loop-between-the-queue-and-sign-in)
 - [503 from the API (not configured)](#503-from-the-api-not-configured)
 - [Missing or empty .env files](#missing-or-empty-env-files)
-- [401 from the API](#401-from-the-api)
+- [Reviewing says "You can't review an item you submitted"](#reviewing-says-you-cant-review-an-item-you-submitted)
+- [Name validation errors](#name-validation-errors)
+- [Old data from earlier versions](#old-data-from-earlier-versions)
 - [CORS errors in the browser](#cors-errors-in-the-browser)
-- [The app shows a configuration error](#the-app-shows-a-configuration-error)
 - [Corrupt JSON data file](#corrupt-json-data-file)
 - [Resetting data](#resetting-data)
-- [E2E specs are skipped](#e2e-specs-are-skipped)
+- [E2E problems](#e2e-problems)
 
 ## vendor/autoload.php is missing
 
@@ -36,54 +36,41 @@ lsof -i :8000
 kill <pid>
 ```
 
-For E2E, set `E2E_BACKEND_PORT` and `E2E_FRONTEND_PORT` instead. If you change the dev frontend port, also add the new origin to `CLERK_AUTHORIZED_PARTIES` and `CORS_ALLOWED_ORIGINS` in `backend/.env`.
-
-## Redirect loop between the queue and sign-in
-
-Symptom: the page flickers between `/items` and `/sign-in`, or the browser makes requests to `/api/items` over and over, although you are signed in to Clerk.
-
-Cause: the API rejected a valid session with `401`. The usual reason is a log line like this in `backend/storage/logs/laravel.log`:
-
-```
-Unable to load Clerk JWKS ... Database file at path [.../database.sqlite] does not exist
-```
-
-An old `backend/.env` has `CACHE_STORE=database` but the app has no database. The backend now falls back to fetching the JWKS directly and logs a warning (`Cache store unavailable; fetching Clerk JWKS directly.`), so tokens still verify. To silence the warning, set `CACHE_STORE=file` in `backend/.env` and restart. See [401 from the API](#401-from-the-api) for other causes.
+For E2E, set `E2E_BACKEND_PORT` and `E2E_FRONTEND_PORT` instead. If you change the dev frontend port, also add the new origin to `CORS_ALLOWED_ORIGINS` in `backend/.env`.
 
 ## 503 from the API (not configured)
 
-A `503` means the server is missing required settings. The body lists only variable names, never values:
+A `503` with `code: "app_not_configured"` means `APP_KEY` is missing. The body lists only variable names, never values:
 
 | Code | `errors.missing` | Fix |
 | --- | --- | --- |
-| `auth_not_configured` | `["CLERK_JWKS_URL"]` | Set `CLERK_JWKS_URL` in `backend/.env` (see [Configuration](configuration.md)) and restart. |
-| `app_not_configured` | `["APP_KEY"]` | Run `cd backend && php artisan key:generate` and restart. |
+| `app_not_configured` | `["APP_KEY"]` | Run `make dev` (or `sh scripts/ensure-backend-env.sh`), which creates `backend/.env` and generates the key only if it is empty. Then restart. |
 
-This takes precedence over `401`, even when no token is sent. `GET /api/health` shows which checks fail (`checks.app_key`, `checks.clerk`, `checks.storage_writable`) without exposing values.
+`GET /api/health` shows which checks fail (`checks.app_key`, `checks.storage_writable`) without exposing values. The UI shows "The backend is not configured: missing APP_KEY" with a **Retry** button.
 
 ## Missing or empty .env files
 
-The backend starts without `backend/.env`, or with an empty one, using safe defaults (see [Configuration](configuration.md#defaults-when-variables-are-missing)). It cannot authenticate anyone until `CLERK_JWKS_URL` is set and `APP_KEY` exists, so the API answers `503` until then. Fix it with `make install`, which copies `.env.example` and generates the key.
+The backend starts without `backend/.env`, or with an empty one, using safe defaults (see [Configuration](configuration.md#defaults-when-variables-are-missing)), but the API answers `503` until `APP_KEY` exists. `make dev` and `make install` fix this automatically: they create `backend/.env` from the example when it is missing and generate `APP_KEY` when it is empty, and never overwrite an existing key.
 
-## 401 from the API
+## Reviewing says "You can't review an item you submitted"
 
-Every `401` has `code: "unauthenticated"`; check the cause in this order:
+The reviewer name matches the item's submitter after trimming, collapsing spaces and ignoring case, so `Ana Lopez`, ` ana  lopez ` and `ANA LOPEZ` are all the same person. On the item page the button is disabled; in a bulk review the item is skipped ("1 skipped: you submitted them") and the API reports `same_person`. Have someone else review it, or type that person's name. Accents count: `José` and `Jose` are different people. See [Identity and names](identity-and-names.md#the-self-review-rule).
 
-1. **Database drivers in an old `.env`.** The backend needs no database and `.env.example` sets `CACHE_STORE=file`, `SESSION_DRIVER=array` and `QUEUE_CONNECTION=sync`. If your `backend/.env` was created before that and still has `database` for these, the JWKS cache fails and every request returns `401` under `make dev`. Change the three values to the ones above and restart.
-2. **Authorized parties.** The token's `azp` must be listed in `CLERK_AUTHORIZED_PARTIES` (comma-separated, exact origin including port, for example `http://localhost:5173`).
-3. **Issuer.** `CLERK_ISSUER` must equal the token's `iss`, which is your Clerk Frontend API URL with no trailing slash.
-4. **JWKS URL.** `CLERK_JWKS_URL` must be reachable from the backend. Failures are logged as `Unable to load Clerk JWKS` in `backend/storage/logs/laravel.log`.
-5. **Expired session.** Sign in again; the UI redirects to `/sign-in` automatically.
+## Name validation errors
 
-After changing `.env`, restart `make dev`. To clear a cached JWKS: `cd backend && php artisan cache:clear`.
+`submitter_name` and `reviewer_name` must be 2 to 60 characters after trimming and collapsing whitespace. A blank or whitespace-only name, a single character or a name over 60 characters is rejected with `422 validation_failed` on that field, for example `The reviewer name must be between 2 and 60 characters.` In the UI the message appears under **Your name** or **Reviewer name**, with a character counter. Fix the name and try again. See [Errors](errors.md).
+
+## Old data from earlier versions
+
+`users.json` files written by earlier versions carry extra identity fields. They still load, and the extra fields are ignored. Old names may not follow the current normalization rules, so the same person can show up twice. To start clean, reseed (this deletes all items, reviews and users):
+
+```bash
+php backend/artisan app:seed-json --fresh
+```
 
 ## CORS errors in the browser
 
 The browser console shows a blocked cross-origin request. `CORS_ALLOWED_ORIGINS` in `backend/.env` must contain the exact frontend origin (scheme, host and port), for example `http://localhost:5173`. Also check that `VITE_API_BASE_URL` in `frontend/.env` points at the running API (`http://localhost:8000/api`). Restart both servers after changing either file.
-
-## The app shows a configuration error
-
-`VITE_CLERK_PUBLISHABLE_KEY is not set`: add your publishable key to `frontend/.env` and restart the Vite server.
 
 ## Corrupt JSON data file
 
@@ -103,6 +90,6 @@ php artisan app:seed-json --fresh --count=50
 
 `--fresh` deletes `users.json`, `items.json` and `reviews.json` in the storage directory before seeding. Add `--seed=1` for repeatable data. `make dev` and `make install` run `php artisan app:seed-json --if-empty` first, which seeds only when `items.json` is missing or an empty list and never overwrites existing data. To start empty, delete the three files in `backend/storage/app/data` (or in `JSON_STORAGE_PATH`).
 
-## E2E specs are skipped
+## E2E problems
 
-The setup project skips Clerk-dependent specs and names the missing variables, for example `E2E_CLERK_USER_USERNAME`, `CLERK_PUBLISHABLE_KEY` (taken from `VITE_CLERK_PUBLISHABLE_KEY`) or `CLERK_SECRET_KEY`. Set them as described in [Testing](testing.md).
+The suite needs no keys or sign-in. If `make e2e` fails to start, the usual cause is a busy port (8099 or 5199): stop the other process or set `E2E_BACKEND_PORT` and `E2E_FRONTEND_PORT`. The runner does not reuse existing servers. For debugging tips see [Testing](testing.md#debugging-a-failing-e2e-run).

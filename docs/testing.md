@@ -14,10 +14,10 @@ The test layers, how to run each one, the helpers available and how to debug a f
 
 | Layer | Tool | Location | Covers |
 | --- | --- | --- | --- |
-| Backend unit | Pest | `backend/tests/Unit` | JSON store, repositories, entities, query pipeline, review service, Clerk token verifier. |
-| Backend feature | Pest | `backend/tests/Feature` | HTTP endpoints, the error contract, pagination bounds, running without a database. |
+| Backend unit | Pest | `backend/tests/Unit` | JSON store, repositories, entities, name normalization (`PersonName`), query pipeline, review service. |
+| Backend feature | Pest | `backend/tests/Feature` | HTTP endpoints (all open, no auth headers), the error contract, name validation and `same_person`, sorts, pagination bounds, the `.env` script, running without a database. |
 | Frontend unit and component | Vitest + jsdom | `frontend/src/**/__tests__`, `frontend/src/App.test.ts` | API client, composables, components, views, router guard, helpers. |
-| End to end | Playwright | `frontend/e2e` | Real browser against a real backend: smoke, submit, queue search, filter and sort, bulk review, item detail, error states. |
+| End to end | Playwright | `frontend/e2e` | Real browser against a real backend: smoke, submit, queue search, filter and sort, bulk review, self-review, item detail, error states. |
 
 ## Running tests
 
@@ -48,43 +48,36 @@ Located in `backend/tests/Support`. Use them with `uses(...)` at the top of a Pe
 | Helper | What it does |
 | --- | --- |
 | `UsesTempJsonStorage` | Points `storage_json.path` at a fresh temp directory for each test and deletes it afterwards, so tests never touch real data. |
-| `ActsAsClerkUser` | Provides `actingAsClerk($clerkId = 'user_test', $email = null)`, which binds `FakeTokenVerifier` and sets the `Authorization` header. |
-| `FakeTokenVerifier` | A `TokenVerifier` that accepts tokens shaped `test-token:<clerkId>:<email>` so tests need no network or Clerk keys. |
+
+Nothing else is needed: the API has no authentication, so feature tests call endpoints directly with `getJson` / `postJson` and no headers. Pass names in the body (`submitter_name`, `reviewer_name`) or create people with `app(UserRepository::class)->findOrCreateByName('Ana Lopez')`.
 
 Example:
 
 ```php
-uses(ActsAsClerkUser::class, UsesTempJsonStorage::class);
+uses(UsesTempJsonStorage::class);
 
-it('returns the current user', function () {
-    $this->actingAsClerk('user_1', 'a@x.io')->getJson('/api/me')
+it('rejects reviewing your own item', function () {
+    $ana = app(UserRepository::class)->findOrCreateByName('Ana Lopez');
+    $item = app(ItemRepository::class)->create(['title' => 'Login', 'description' => 'd', 'submitter_id' => $ana->id]);
+
+    $this->postJson('/api/items/reviews', ['ids' => [$item->id], 'decision' => 'approved', 'reviewer_name' => ' ana  lopez '])
         ->assertOk()
-        ->assertJsonPath('data.email', 'a@x.io');
+        ->assertJsonPath('data.failed.0.reason', 'same_person');
 });
 ```
 
 ## End-to-end tests
 
-`make e2e` starts its own backend on port `8099` and frontend on port `5199`, uses an isolated temp data directory, seeds 30 items with `app:seed-json --fresh --count=30`, signs in once as the Clerk test user and runs the specs in `frontend/e2e/specs`.
+`make e2e` starts its own backend on port `8099` and frontend on port `5199`, uses an isolated temp data directory, seeds 30 items with `app:seed-json --fresh --count=30` and runs the specs in `frontend/e2e/specs`. There is no sign-in, and the suite needs no keys or environment variables: the E2E backend gets a throwaway `APP_KEY`, so it runs even without `backend/.env`.
 
 Prerequisites:
 
 - Chromium for Playwright (installed by `make install`, or `cd frontend && pnpm exec playwright install chromium`).
-- A Clerk development instance with a test user (see [Authentication](authentication.md)).
-- These variables (see [Configuration](configuration.md)):
+- Free ports `8099` and `5199`, or set `E2E_FRONTEND_PORT` and `E2E_BACKEND_PORT` (see [Configuration](configuration.md)).
 
-  | Variable | Where it can live |
-  | --- | --- |
-  | `VITE_CLERK_PUBLISHABLE_KEY` | `frontend/.env` or `frontend/.env.local` |
-  | `E2E_CLERK_USER_USERNAME` | `frontend/.env` or `frontend/.env.local` |
-  | `CLERK_SECRET_KEY` | the shell, or `backend/.env` (read automatically when unset) |
-  | `CLERK_JWKS_URL`, `CLERK_ISSUER` | `backend/.env` |
+Specs type names themselves (page objects in `frontend/e2e/pages` fill **Your name** and **Reviewer name**) and use unique names and titles per run, so they do not depend on each other. `self-review.spec.ts` covers the self-review rule on the detail page and in the bulk bar.
 
-How sign-in works: the setup project calls `@clerk/testing` `clerk.signIn` with the user's email, which uses a Clerk sign-in token created with `CLERK_SECRET_KEY`. It does not depend on the user's password. The signed-in state is saved to `frontend/e2e/.auth/user.json` and reused by all specs. The `e2e/.auth/` directory is git-ignored because it holds session cookies.
-
-The E2E backend server overrides `JSON_STORAGE_PATH`, `CORS_ALLOWED_ORIGINS`, `CLERK_AUTHORIZED_PARTIES` and `CACHE_STORE` for the E2E ports. The ports can be changed with `E2E_FRONTEND_PORT` and `E2E_BACKEND_PORT`.
-
-If the Clerk variables are missing, the Clerk-dependent specs are skipped with a message naming the missing variables and `make e2e` still succeeds.
+The E2E backend server overrides `JSON_STORAGE_PATH`, `CORS_ALLOWED_ORIGINS`, `CACHE_STORE` and `APP_KEY` for the E2E ports.
 
 ## Debugging a failing E2E run
 
@@ -98,5 +91,5 @@ If the Clerk variables are missing, the Clerk-dependent specs are skipped with a
 
   The trace viewer shows each action, the DOM snapshot, network calls and console output.
 - Watch the browser with `pnpm exec playwright test --headed`, or step through with `--debug`.
-- A 401 after sign-in usually means `CLERK_ISSUER` or `CLERK_JWKS_URL` in `backend/.env` is wrong; see [Troubleshooting](troubleshooting.md).
+- A `503` from the E2E backend would mean its `APP_KEY` is missing; see [Troubleshooting](troubleshooting.md).
 - E2E ports in use: stop the other process or set `E2E_FRONTEND_PORT` and `E2E_BACKEND_PORT`. The runner does not reuse existing servers.
