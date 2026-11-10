@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '../fixtures.ts'
+import { QueuePage } from '../pages/QueuePage.ts'
 
 async function boxes(page: Page) {
   await page.goto('/items')
@@ -40,4 +41,30 @@ test('search sits below the filters on a phone without horizontal scroll', async
     'document.documentElement.scrollWidth <= window.innerWidth',
   )
   expect(noOverflow).toBe(true)
+})
+
+test('header Clear filters sits on the title row at the far right and clears the filter', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
+  const queue = new QueuePage(page)
+  await queue.goto()
+  const button = page.locator('[data-test="header-clear-filters"]')
+  await expect(button).toHaveCount(0)
+  await queue.chooseFilter('Status', 'Approved')
+  await expect(page).toHaveURL(/filter%5Bstatus%5D=approved|filter\[status\]=approved/)
+  await expect(button).toBeVisible()
+  const [h1Box, buttonBox, mainBox] = await Promise.all([
+    page.getByRole('heading', { name: 'Review Queue' }).boundingBox(),
+    button.boundingBox(),
+    page.locator('[data-test="queue-toolbar"]').boundingBox(),
+  ])
+  if (!h1Box || !buttonBox || !mainBox) throw new Error('header elements not laid out')
+  expect(Math.abs(buttonBox.y - h1Box.y)).toBeLessThanOrEqual(4)
+  expect(Math.abs(buttonBox.x + buttonBox.width - (mainBox.x + mainBox.width))).toBeLessThanOrEqual(
+    4,
+  )
+  await button.click()
+  await expect(button).toHaveCount(0)
+  await expect(page).not.toHaveURL(/filter/)
 })
