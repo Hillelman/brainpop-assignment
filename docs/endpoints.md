@@ -82,6 +82,8 @@ Query parameters:
 | `filter[submitter]` | string | no | none | The id of a user who has submitted at least one item, as listed in the `options` of `/api/items/filters`. Any other value is rejected with `422`. |
 | `filter[created_from]` | date | no | none | `YYYY-MM-DD`, inclusive from the start of that UTC day. |
 | `filter[created_to]` | date | no | none | `YYYY-MM-DD`, inclusive to the end of that UTC day; must not be earlier than `filter[created_from]`. |
+| `filter[reviewed_from]` | date | no | none | `YYYY-MM-DD`, inclusive from the start of that UTC day, compared with the date of the item's latest review. Items that have not been reviewed are excluded whenever this is set. |
+| `filter[reviewed_to]` | date | no | none | `YYYY-MM-DD`, inclusive to the end of that UTC day, compared with the latest review date; must not be earlier than `filter[reviewed_from]`. Unreviewed items are excluded whenever this is set. |
 | `sort` | string | no | `-created_at` | One of `created_at`, `updated_at`, `title`, `risk`, `status`, `submitter`; prefix with `-` for descending. `status` orders pending, approved, rejected; `submitter` orders by name, case-insensitive. Items with no risk always sort last. Ties break on `id`. |
 | `page` | integer | no | `1` | 1 to 100000. |
 | `per_page` | integer | no | `15` | 1 to 100. |
@@ -197,8 +199,10 @@ Response `200`:
         { "value": "2", "label": "Ben Carter" }
       ]
     },
-    { "key": "created_from", "label": "Created from", "type": "date" },
-    { "key": "created_to", "label": "Created to", "type": "date" }
+    { "key": "created_from", "label": "From", "type": "date", "group": "created_at", "group_label": "Created at" },
+    { "key": "created_to", "label": "To", "type": "date", "group": "created_at", "group_label": "Created at" },
+    { "key": "reviewed_from", "label": "From", "type": "date", "group": "reviewed_at", "group_label": "Reviewed at" },
+    { "key": "reviewed_to", "label": "To", "type": "date", "group": "reviewed_at", "group_label": "Reviewed at" }
   ],
   "sorts": [
     { "key": "created_at", "label": "Created" },
@@ -211,7 +215,9 @@ Response `200`:
 }
 ```
 
-A filter `type` is `select` (with `options`), `date` or `text`. The `submitter` options are the people who have submitted at least one item, sorted by name, with the user id as the value; the list changes as new people submit.
+A filter `type` is `select` (with `options`), `date` or `text`. The `submitter` options are the people who have submitted at least one item, sorted by name, with the user id as the value; the list changes as new people submit, and the queue UI refetches it each time you return to the queue.
+
+A filter may also carry `group` (a stable key) and `group_label` (the heading shown to people). Filters that share a `group` are laid out together as one labelled row; the label of each member is then short, such as `From` and `To`. Both fields are optional and are omitted for ungrouped filters.
 
 ```bash
 curl http://localhost:8000/api/items/filters

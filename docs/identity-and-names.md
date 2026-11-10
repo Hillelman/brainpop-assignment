@@ -56,7 +56,7 @@ A person cannot review an item they submitted. The check compares user ids, so i
 
 - **API:** `POST /api/items/reviews` reports the item in `failed` with `reason: "same_person"`. The item stays pending, and the other items in the batch are still reviewed. If every item is `same_person`, the response is still `200` with all of them in `failed`. See [Endpoints](endpoints.md#post-apiitemsreviews).
 - **Item page:** as soon as the reviewer name matches the submitter, the form shows "You can't review an item you submitted" and disables **Submit review**.
-- **Bulk bar:** the request is sent, and the result toast says for example "1 skipped: you submitted them". When every selected item is skipped, only that message is shown.
+- **Bulk bar:** the bar checks the reviewer name against the submitter of every selected item as you type. On a match it shows an inline error (for one item, `You submitted “<title>”. Deselect it or use a different name.`) and disables **Approve** and **Reject** until you deselect those items or change the name, so nothing is sent. If the server still reports `same_person` for every item, the same inline error is shown. See [User guide](user-guide.md#bulk-review).
 
 ## Where names are entered
 

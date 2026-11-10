@@ -54,7 +54,7 @@ The backend starts without `backend/.env`, or with an empty one, using safe defa
 
 ## Reviewing says "You can't review an item you submitted"
 
-The reviewer name matches the item's submitter after trimming, collapsing spaces and ignoring case, so `Ana Lopez`, ` ana  lopez ` and `ANA LOPEZ` are all the same person. On the item page the button is disabled; in a bulk review the item is skipped ("1 skipped: you submitted them") and the API reports `same_person`. Have someone else review it, or type that person's name. Accents count: `José` and `Jose` are different people. See [Identity and names](identity-and-names.md#the-self-review-rule).
+The reviewer name matches the item's submitter after trimming, collapsing spaces and ignoring case, so `Ana Lopez`, ` ana  lopez ` and `ANA LOPEZ` are all the same person. On the item page the button is disabled; in the bulk bar an inline error names the items you submitted and **Approve** and **Reject** stay disabled (the API itself reports `same_person`). Have someone else review it, or type that person's name. Accents count: `José` and `Jose` are different people. See [Identity and names](identity-and-names.md#the-self-review-rule).
 
 ## Name validation errors
 

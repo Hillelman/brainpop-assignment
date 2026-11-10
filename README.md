@@ -6,9 +6,9 @@ Features:
 
 - Open access with named submitters and reviewers: type your name when you submit or review; no accounts, keys or tokens.
 - Submit items (name, title and description) to the queue.
-- Queue view showing all items, with a Status filter, search, filters (including Submitter), sorting by clicking the column headers (Title, Status, Risk, Submitter, Created) and pagination, all kept in the URL so views are shareable.
+- Queue view showing all items, with a Status filter, search, filters (Status, Risk, Submitter and Created at / Reviewed at date ranges), a light/dark theme toggle, sorting by clicking the column headers (Title, Status, Risk, Submitter, Created) and pagination, all kept in the URL so views are shareable.
 - Bulk approve or reject with a reviewer name, an optional risk level and note, with clear partial-failure reporting.
-- A person cannot review an item they submitted; such items are skipped and reported.
+- A person cannot review an item they submitted: the form and the bulk bar show an inline error and disable the review buttons until the name or selection changes.
 - Item detail page with the full review history and a copyable link.
 - Pluggable filters and sorts: add one with a class and a config line.
 
