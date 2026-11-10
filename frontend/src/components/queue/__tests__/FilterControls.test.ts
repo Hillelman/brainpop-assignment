@@ -85,9 +85,7 @@ describe('FilterControls layout', () => {
     expect(groups).toHaveLength(2)
     const [created, reviewed] = groups
     if (!created || !reviewed) throw new Error('expected two group rows')
-    expect(created.element.firstElementChild?.getAttribute('data-test')).toBe(
-      'filter-group-label',
-    )
+    expect(created.element.firstElementChild?.getAttribute('data-test')).toBe('filter-group-label')
     expect(reviewed.findAll('input').map((i) => i.attributes('aria-label'))).toEqual([
       'Reviewed at from',
       'Reviewed at to',

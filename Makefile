@@ -24,6 +24,7 @@ format:
 lint:
 	cd backend && ./vendor/bin/pint --test
 	cd frontend && pnpm lint
+	cd frontend && pnpm exec prettier --check src e2e
 
 typecheck:
 	cd frontend && pnpm typecheck
