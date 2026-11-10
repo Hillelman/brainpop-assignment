@@ -1,17 +1,12 @@
 import { defineConfig, devices } from '@playwright/test'
 import {
-  authFile,
   backendPort,
   backendUrl,
+  e2eAppKey,
   e2eDataDir,
   frontendPort,
   frontendUrl,
-  loadFrontendEnv,
-  resolveClerkEnv,
 } from './e2e/support/env.ts'
-
-loadFrontendEnv()
-resolveClerkEnv()
 
 export default defineConfig({
   testDir: './e2e',
@@ -28,7 +23,7 @@ export default defineConfig({
     {
       name: 'chromium',
       testMatch: /specs\/.*\.spec\.ts/,
-      use: { ...devices['Desktop Chrome'], storageState: authFile },
+      use: { ...devices['Desktop Chrome'] },
       dependencies: ['setup'],
     },
   ],
@@ -42,8 +37,9 @@ export default defineConfig({
       env: {
         JSON_STORAGE_PATH: e2eDataDir,
         CORS_ALLOWED_ORIGINS: frontendUrl,
-        CLERK_AUTHORIZED_PARTIES: frontendUrl,
         CACHE_STORE: 'file',
+        // Throwaway key so the suite runs without backend/.env; it protects no real data.
+        APP_KEY: e2eAppKey,
       },
     },
     {

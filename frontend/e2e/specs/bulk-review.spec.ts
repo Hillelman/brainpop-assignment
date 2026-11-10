@@ -1,4 +1,4 @@
-import { expect, test, uniqueTitle } from '../fixtures.ts'
+import { expect, test, uniqueName, uniqueTitle } from '../fixtures.ts'
 
 test('bulk approve reviews pending items and skips an already reviewed one', async ({
   page,
@@ -8,8 +8,10 @@ test('bulk approve reviews pending items and skips an already reviewed one', asy
 }) => {
   const suffix = uniqueTitle('Bulk')
   const titles = [`${suffix} A`, `${suffix} B`, `${suffix} C`]
-  for (const title of titles) await submitPage.submit(title)
-  await detailPage.review('Reject', { note: 'Already handled' })
+  const submitterName = uniqueName('Bulk Submitter')
+  const reviewerName = uniqueName('Bulk Reviewer')
+  for (const title of titles) await submitPage.submit({ title, submitterName })
+  await detailPage.review({ decision: 'Reject', note: 'Already handled', reviewerName })
   await detailPage.expectStatus('Rejected')
 
   await queuePage.goto(`?state=all&q=${encodeURIComponent(suffix)}`)
@@ -17,7 +19,12 @@ test('bulk approve reviews pending items and skips an already reviewed one', asy
   await queuePage.selectItems(...titles)
   await expect(page.getByText('1 already reviewed and will be skipped.')).toBeVisible()
 
-  await queuePage.bulkReview('Approve', { risk: 'High', note: 'Bulk approved by E2E' })
+  await queuePage.bulkReview({
+    decision: 'Approve',
+    risk: 'High',
+    note: 'Bulk approved by E2E',
+    reviewerName,
+  })
   await expect(page.getByText('2 reviewed')).toBeVisible()
 
   await queuePage.openTab('Reviewed')

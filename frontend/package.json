@@ -26,7 +26,6 @@
     "vue-sonner": "^2.0.9"
   },
   "devDependencies": {
-    "@clerk/testing": "^2.2.55",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.65.0",
     "@tailwindcss/vite": "^4.3.5",

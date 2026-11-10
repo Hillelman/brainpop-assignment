@@ -60,17 +60,20 @@ export class QueuePage {
     return links.map((t) => t.trim())
   }
 
-  async bulkReview(
-    decision: 'Approve' | 'Reject',
-    options: { risk?: 'Low' | 'Medium' | 'High'; note?: string } = {},
-  ): Promise<void> {
-    if (options.risk) {
+  async bulkReview(input: {
+    decision: 'Approve' | 'Reject'
+    risk?: 'Low' | 'Medium' | 'High'
+    note?: string
+    reviewerName: string
+  }): Promise<void> {
+    await this.page.getByRole('textbox', { name: 'Reviewer name' }).fill(input.reviewerName)
+    if (input.risk) {
       // The bulk bar renders after the toolbar, whose Risk filter shares the label.
       await this.page.getByRole('combobox', { name: 'Risk' }).last().click()
-      await this.page.getByRole('option', { name: options.risk, exact: true }).click()
+      await this.page.getByRole('option', { name: input.risk, exact: true }).click()
     }
-    if (options.note) await this.page.getByRole('textbox', { name: 'Note' }).fill(options.note)
-    await this.page.getByRole('button', { name: decision, exact: true }).click()
+    if (input.note) await this.page.getByRole('textbox', { name: 'Note' }).fill(input.note)
+    await this.page.getByRole('button', { name: input.decision, exact: true }).click()
   }
 
   listError(): Locator {

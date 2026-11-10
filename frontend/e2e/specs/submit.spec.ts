@@ -1,4 +1,4 @@
-import { expect, test, uniqueTitle } from '../fixtures.ts'
+import { expect, test, uniqueName, uniqueTitle } from '../fixtures.ts'
 
 test('submitting an item redirects to its detail page as Pending', async ({
   submitPage,
@@ -6,9 +6,11 @@ test('submitting an item redirects to its detail page as Pending', async ({
   page,
 }) => {
   const title = uniqueTitle('Submit flow')
-  const id = await submitPage.submit(title)
+  const submitterName = uniqueName('Submit Person')
+  const id = await submitPage.submit({ title, submitterName })
 
   await expect(page).toHaveURL(new RegExp(`/items/${id}$`))
   await expect(detailPage.title(title)).toBeVisible()
   await detailPage.expectStatus('Pending')
+  await expect(page.getByText(submitterName)).toBeVisible()
 })

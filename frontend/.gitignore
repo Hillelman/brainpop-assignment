@@ -23,6 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 
-# Playwright; e2e/.auth holds Clerk session cookies from E2E sign-in
+# Playwright; e2e/.auth is no longer written but kept ignored
 e2e/.auth/
 blob-report/
