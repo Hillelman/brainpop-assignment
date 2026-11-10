@@ -5,6 +5,7 @@ export type QueryParams = { [key: string]: QueryValue | QueryParams }
 
 const DEFAULT_API_BASE_URL = 'http://localhost:8000/api'
 
+// VITE_API_BASE_URL is an override used only by Playwright.
 export function getApiBaseUrl(): string {
   const configured = String(import.meta.env.VITE_API_BASE_URL ?? '').trim()
   return (configured || DEFAULT_API_BASE_URL).replace(/\/+$/, '')
