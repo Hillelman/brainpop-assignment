@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import { ArrowDown, ArrowUp, ArrowUpDown } from '@lucide/vue'
 import { Card, CardContent } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -12,15 +14,28 @@ import {
 } from '@/components/ui/table'
 import RiskBadge from '@/components/items/RiskBadge.vue'
 import StatusBadge from '@/components/items/StatusBadge.vue'
-import type { Item } from '@/types/api'
+import MobileSortMenu from '@/components/queue/MobileSortMenu.vue'
+import { nextSort, parseSort, SORT_COLUMNS, sortableColumns } from '@/components/queue/sorting'
+import type { Item, SortMeta } from '@/types/api'
 
 const props = defineProps<{
   items: Item[]
   selectedIds: number[]
   allSelected: boolean
+  sorts: SortMeta[]
+  sort: string
 }>()
 
-const emit = defineEmits<{ toggle: [id: number]; toggleAll: [] }>()
+const emit = defineEmits<{ toggle: [id: number]; toggleAll: []; sort: [sort: string] }>()
+
+const sortable = computed(() => new Set(sortableColumns(props.sorts).map((c) => c.key)))
+const active = computed(() => parseSort(props.sort))
+
+function ariaSort(key: string): 'ascending' | 'descending' | 'none' | undefined {
+  if (!sortable.value.has(key)) return undefined
+  if (active.value.key !== key) return 'none'
+  return active.value.descending ? 'descending' : 'ascending'
+}
 
 function isSelected(id: number): boolean {
   return props.selectedIds.includes(id)
@@ -44,11 +59,27 @@ function formatDate(value: string): string {
                 @update:model-value="emit('toggleAll')"
               />
             </TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Risk</TableHead>
-            <TableHead>Submitter</TableHead>
-            <TableHead>Created</TableHead>
+            <TableHead
+              v-for="column in SORT_COLUMNS"
+              :key="column.key"
+              :aria-sort="ariaSort(column.key)"
+            >
+              <button
+                v-if="sortable.has(column.key)"
+                type="button"
+                class="group -ml-2 inline-flex items-center gap-1 rounded-md px-2 py-1 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                @click="emit('sort', nextSort(sort, column.key))"
+              >
+                {{ column.label }}
+                <ArrowDown v-if="ariaSort(column.key) === 'descending'" class="size-4" />
+                <ArrowUp v-else-if="ariaSort(column.key) === 'ascending'" class="size-4" />
+                <ArrowUpDown
+                  v-else
+                  class="size-4 opacity-0 group-hover:opacity-50 group-focus-visible:opacity-50"
+                />
+              </button>
+              <template v-else>{{ column.label }}</template>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -76,6 +107,10 @@ function formatDate(value: string): string {
           </TableRow>
         </TableBody>
       </Table>
+    </div>
+
+    <div class="mb-2 md:hidden">
+      <MobileSortMenu :sorts="sorts" :sort="sort" @update="emit('sort', $event)" />
     </div>
 
     <ul class="flex flex-col gap-2 md:hidden">

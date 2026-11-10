@@ -40,7 +40,7 @@ test('queue shows an inline error when the list request fails and Retry recovers
 })
 
 test('pagination moves to page 2 with different items', async ({ page, queuePage }) => {
-  await queuePage.goto('?state=all&perPage=10')
+  await queuePage.goto('?perPage=10')
   await expect(queuePage.dataRows).toHaveCount(10)
   const firstPage = await queuePage.titles()
 

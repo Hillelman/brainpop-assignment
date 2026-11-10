@@ -40,7 +40,6 @@ test('bulk review skips items submitted by the reviewer and reviews the rest', a
   await expect(page.getByText('1 skipped: you submitted them')).toBeVisible()
   await expect(page.getByText('2 reviewed')).toBeVisible()
 
-  await queuePage.openTab('All')
   await expect(queuePage.row(own).getByText('Pending')).toBeVisible()
   for (const title of others) await expect(queuePage.row(title).getByText('Approved')).toBeVisible()
   await expect(queuePage.search).toBeEnabled()
