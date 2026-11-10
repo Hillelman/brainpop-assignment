@@ -60,18 +60,50 @@ class ClerkJwksTokenVerifier implements TokenVerifier
     private function keys(): array
     {
         try {
-            /** @var array{keys: list<array<string, mixed>>} $jwks */
-            $jwks = Cache::remember(self::JWKS_CACHE_KEY, self::JWKS_TTL_SECONDS, function (): array {
-                $response = Http::timeout(5)->get((string) config('clerk.jwks_url'))->throw();
-
-                return $response->json();
-            });
-
-            return JWK::parseKeySet($jwks, 'RS256');
+            return JWK::parseKeySet($this->jwks(), 'RS256');
         } catch (Throwable $e) {
-            Log::error('Unable to load Clerk JWKS.', ['exception' => $e->getMessage()]);
+            Log::error('Unable to load Clerk JWKS.', ['exception_class' => $e::class]);
 
             throw new AuthenticationException('Unable to verify token.');
         }
+    }
+
+    /**
+     * Reads the JWKS through the cache, falling back to a direct fetch when the cache store itself is broken.
+     *
+     * @return array{keys: list<array<string, mixed>>}
+     */
+    private function jwks(): array
+    {
+        $cacheWarned = false;
+        $warnCacheUnavailable = function () use (&$cacheWarned): void {
+            if (! $cacheWarned) {
+                Log::warning('Cache store unavailable; fetching Clerk JWKS directly. Check CACHE_STORE.');
+                $cacheWarned = true;
+            }
+        };
+
+        try {
+            $cached = Cache::get(self::JWKS_CACHE_KEY);
+        } catch (Throwable) {
+            $warnCacheUnavailable();
+            $cached = null;
+        }
+
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        $response = Http::timeout(5)->get((string) config('clerk.jwks_url'))->throw();
+        /** @var array{keys: list<array<string, mixed>>} $jwks */
+        $jwks = $response->json();
+
+        try {
+            Cache::put(self::JWKS_CACHE_KEY, $jwks, self::JWKS_TTL_SECONDS);
+        } catch (Throwable) {
+            $warnCacheUnavailable();
+        }
+
+        return $jwks;
     }
 }

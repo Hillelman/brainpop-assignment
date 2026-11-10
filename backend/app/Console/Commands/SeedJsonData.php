@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\File;
 use Random\Engine\Mt19937;
 use Random\Randomizer;
 
-#[Signature('app:seed-json {--count=50 : Number of items to create} {--fresh : Delete existing JSON data first} {--seed= : Integer seed for deterministic output}')]
+#[Signature('app:seed-json {--count=50 : Number of items to create} {--fresh : Delete existing JSON data first} {--seed= : Integer seed for deterministic output} {--if-empty : Do nothing when items.json already contains items}')]
 #[Description('Seed the JSON storage with demo users, items and reviews')]
 class SeedJsonData extends Command
 {
@@ -34,6 +34,12 @@ class SeedJsonData extends Command
 
     public function handle(UserRepository $users, ItemRepository $items, ReviewRepository $reviews): int
     {
+        if ($this->option('if-empty') && $this->hasItems()) {
+            $this->info('Items already exist; skipping seed.');
+
+            return self::SUCCESS;
+        }
+
         $count = (int) $this->option('count');
         if ($count < 0) {
             $this->error('The --count option must not be negative.');
@@ -97,5 +103,17 @@ class SeedJsonData extends Command
         $this->info("Seeded {$count} items for ".count($userIds).' users.');
 
         return self::SUCCESS;
+    }
+
+    private function hasItems(): bool
+    {
+        $file = config('storage_json.path').'/items.json';
+        if (! File::exists($file)) {
+            return false;
+        }
+
+        $items = json_decode(File::get($file), true);
+
+        return is_array($items) && $items !== [];
     }
 }

@@ -6,5 +6,14 @@ use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
-    //
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // No .env exists under test, so give the API the minimum configuration it requires.
+        config([
+            'app.key' => 'base64:'.base64_encode(str_repeat('k', 32)),
+            'clerk.jwks_url' => 'https://clerk.test/.well-known/jwks.json',
+        ]);
+    }
 }

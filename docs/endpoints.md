@@ -21,6 +21,7 @@ Reference for every HTTP endpoint of the Review Queue API.
 - Every endpoint except `/api/health` needs `Authorization: Bearer <Clerk session JWT>` (see [Authentication](authentication.md)). The examples use `$TOKEN` for it.
 - Send `Accept: application/json`, and `Content-Type: application/json` for request bodies.
 - Success bodies are wrapped in `{ "data": ... }`. Paginated lists add Laravel's `links` and `meta`. The fields the UI relies on are `meta.current_page`, `meta.per_page`, `meta.total` and `meta.last_page`.
+- Every authenticated endpoint returns `503` before looking at the token when the server is not configured: `{ "message", "code": "auth_not_configured", "errors": { "missing": ["CLERK_JWKS_URL"] } }`, or `code: "app_not_configured"` with `["APP_KEY"]`. See [Troubleshooting](troubleshooting.md).
 - Errors always use `{ "message", "code", "errors"? }`; see [Errors](errors.md).
 - Timestamps are UTC ISO-8601 strings.
 - A `page` beyond the last page is not an error: it returns `200` with an empty `data` array and correct `meta`.
@@ -52,7 +53,7 @@ An **item** looks like this:
 
 ## GET /api/health
 
-Liveness check.
+Liveness and configuration check. Always `200`, even when configuration is missing. Values are never exposed.
 
 - Auth: none.
 - Parameters: none.
@@ -60,8 +61,10 @@ Liveness check.
 Response `200`:
 
 ```json
-{ "status": "ok" }
+{ "status": "ok", "checks": { "app_key": true, "clerk": true, "storage_writable": true } }
 ```
+
+A check is `false` when `APP_KEY` or `CLERK_JWKS_URL` is unset or the JSON storage directory is not writable.
 
 ```bash
 curl http://localhost:8000/api/health

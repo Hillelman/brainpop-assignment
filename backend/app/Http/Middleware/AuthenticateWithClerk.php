@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Auth\ApiConfiguration;
 use App\Auth\Contracts\TokenVerifier;
 use App\Repositories\Contracts\UserRepository;
 use Closure;
@@ -14,10 +15,13 @@ class AuthenticateWithClerk
     public function __construct(
         private readonly TokenVerifier $verifier,
         private readonly UserRepository $users,
+        private readonly ApiConfiguration $configuration,
     ) {}
 
     public function handle(Request $request, Closure $next): Response
     {
+        $this->configuration->assertReady();
+
         $token = $request->bearerToken();
         if ($token === null || $token === '') {
             throw new AuthenticationException('Unauthenticated.');
