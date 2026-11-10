@@ -4,6 +4,7 @@ import { clerkPlugin, useAuth } from '@clerk/vue'
 import App from '@/App.vue'
 import ConfigError from '@/components/common/ConfigError.vue'
 import { setTokenProvider, setUnauthorizedHandler } from '@/api/http'
+import { createUnauthorizedHandler } from '@/lib/authRecovery'
 import { createAppRouter } from '@/router'
 import '@/style.css'
 
@@ -23,11 +24,7 @@ if (!publishableKey) {
   app.use(router)
 
   setTokenProvider(() => auth.getToken.value())
-  setUnauthorizedHandler(() => {
-    const current = router.currentRoute.value
-    if (current.name === 'sign-in') return
-    void router.push({ path: '/sign-in', query: { redirect: current.fullPath } })
-  })
+  setUnauthorizedHandler(createUnauthorizedHandler(auth, router))
 
   app.mount('#app')
 }

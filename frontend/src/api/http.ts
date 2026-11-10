@@ -4,15 +4,23 @@ export type QueryValue = string | number | boolean | null | undefined
 export type QueryParams = { [key: string]: QueryValue | QueryParams }
 
 type TokenProvider = () => Promise<string | null>
+export type UnauthorizedOutcome = 'redirected' | 'rejected'
+
+const DEFAULT_API_BASE_URL = 'http://localhost:8000/api'
+
+export function getApiBaseUrl(): string {
+  const configured = String(import.meta.env.VITE_API_BASE_URL ?? '').trim()
+  return (configured || DEFAULT_API_BASE_URL).replace(/\/+$/, '')
+}
 
 let tokenProvider: TokenProvider = () => Promise.resolve(null)
-let unauthorizedHandler: (() => void) | null = null
+let unauthorizedHandler: (() => UnauthorizedOutcome | void) | null = null
 
 export function setTokenProvider(provider: TokenProvider): void {
   tokenProvider = provider
 }
 
-export function setUnauthorizedHandler(handler: (() => void) | null): void {
+export function setUnauthorizedHandler(handler: (() => UnauthorizedOutcome | void) | null): void {
   unauthorizedHandler = handler
 }
 
@@ -83,7 +91,7 @@ export async function request<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const baseUrl = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
+  const baseUrl = getApiBaseUrl()
   const query = buildQuery(options.query)
   const url = `${baseUrl}${path}${query ? `?${query}` : ''}`
 
@@ -108,7 +116,13 @@ export async function request<T>(
   const payload = await parseJson(response)
 
   if (!response.ok) {
-    if (response.status === 401) unauthorizedHandler?.()
+    if (response.status === 401 && unauthorizedHandler?.() === 'rejected') {
+      throw new ApiError(
+        401,
+        'server_rejected_session',
+        isErrorBody(payload) ? payload.message : 'Session rejected.',
+      )
+    }
     if (isErrorBody(payload)) {
       throw new ApiError(response.status, payload.code, payload.message, payload.errors)
     }

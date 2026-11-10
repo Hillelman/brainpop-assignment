@@ -39,6 +39,27 @@ test('queue shows an inline error when the list request fails and Retry recovers
   await expect(queuePage.dataRows.first()).toBeVisible()
 })
 
+test('a 401 while signed in stays on the queue with an inline error and no request loop', async ({
+  page,
+  queuePage,
+}) => {
+  let requests = 0
+  await page.route(/\/api\/items(\/filters)?(\?|$)/, (route) => {
+    requests += 1
+    return route.fulfill({
+      status: 401,
+      contentType: 'application/json',
+      body: JSON.stringify({ message: 'Unauthenticated.', code: 'unauthenticated' }),
+    })
+  })
+  await page.goto('/items')
+
+  await expect(queuePage.listError()).toContainText('The server rejected your session')
+  await page.waitForTimeout(3000)
+  await expect(page).toHaveURL(/\/items/)
+  expect(requests).toBeLessThanOrEqual(2)
+})
+
 test('pagination moves to page 2 with different items', async ({ page, queuePage }) => {
   await queuePage.goto('?state=all&perPage=10')
   await expect(queuePage.dataRows).toHaveCount(10)

@@ -7,11 +7,13 @@ export const useFilterMetaStore = defineStore('filterMeta', () => {
   const filters = ref<FilterMeta[]>([])
   const sorts = ref<SortMeta[]>([])
   const loaded = ref(false)
+  const attempted = ref(false)
   const loading = ref(false)
   const error = shallowRef<unknown>(null)
 
   async function load(force = false): Promise<void> {
-    if (loading.value || (loaded.value && !force)) return
+    if (loading.value || (attempted.value && !force)) return
+    attempted.value = true
     loading.value = true
     error.value = null
     try {
