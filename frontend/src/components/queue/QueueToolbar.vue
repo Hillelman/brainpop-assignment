@@ -19,18 +19,22 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div data-test="queue-toolbar" class="flex flex-wrap items-center gap-2">
-    <div v-if="metaFailed" class="flex items-center gap-2 text-sm text-muted-foreground">
+  <div data-test="queue-toolbar" class="flex flex-col gap-2 sm:flex-row sm:items-start">
+    <div
+      v-if="metaFailed"
+      class="flex min-w-0 flex-1 items-center gap-2 text-sm text-muted-foreground"
+    >
       <span>Filters could not be loaded.</span>
       <Button variant="outline" size="sm" @click="emit('retryMeta')">Retry</Button>
     </div>
     <FilterControls
       v-else-if="filters.length"
+      class="min-w-0 flex-1"
       :filters="filters"
       :model-value="query.filter"
       @update:model-value="(v) => emit('update', { filter: v })"
     />
-    <div class="relative ml-auto w-full sm:w-72">
+    <div class="relative w-full sm:w-72 sm:shrink-0">
       <Input
         type="search"
         placeholder="Search items…"

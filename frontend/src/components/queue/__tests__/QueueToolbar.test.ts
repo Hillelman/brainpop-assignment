@@ -39,6 +39,23 @@ describe('QueueToolbar', () => {
     expect(search.getAttribute('placeholder')).toBe('Search items…')
   })
 
+  it('lays out the search at the end of a non-wrapping row on sm and up', () => {
+    const wrapper = mountToolbar()
+    const row = wrapper.get('[data-test="queue-toolbar"]')
+    expect(row.classes()).toContain('sm:flex-row')
+    const controls = row.get('[data-test="filter-controls"]')
+    expect(controls.classes()).toEqual(expect.arrayContaining(['flex-1', 'min-w-0']))
+    const searchWrapper = row.get('input[aria-label="Search items"]').element.parentElement
+    expect(searchWrapper?.classList.contains('sm:shrink-0')).toBe(true)
+    expect(row.element.lastElementChild).toBe(searchWrapper)
+  })
+
+  it('lets the retry state take the remaining space so search stays last', () => {
+    const wrapper = mountToolbar({ metaFailed: true, filters: [] })
+    const retry = wrapper.get('[data-test="queue-toolbar"]').element.firstElementChild
+    expect(retry?.classList.contains('flex-1')).toBe(true)
+  })
+
   it('shows the retry state and keeps the search when filters fail', async () => {
     const wrapper = mountToolbar({ metaFailed: true, filters: [] })
     expect(wrapper.text()).toContain('Filters could not be loaded.')
