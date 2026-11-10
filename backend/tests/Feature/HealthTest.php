@@ -6,7 +6,6 @@ it('reports the API as healthy', function () {
         ->assertExactJson([
             'status' => 'ok',
             'checks' => [
-                'app_key' => true,
                 'storage_writable' => true,
             ],
         ]);

@@ -1,16 +1,12 @@
-.PHONY: backend-env install dev format lint typecheck test e2e
+.PHONY: install dev format lint typecheck test e2e
 
-backend-env:
-	@sh scripts/ensure-backend-env.sh
-
-install: backend-env
+install:
 	cd backend && composer install
 	cd backend && php artisan app:seed-json --if-empty
 	cd frontend && pnpm install
-	cd frontend && { [ -f .env ] || cp .env.example .env; }
 	cd frontend && pnpm exec playwright install chromium
 
-dev: backend-env
+dev:
 	cd backend && php artisan app:seed-json --if-empty
 	@trap 'kill 0' INT TERM EXIT; \
 	(cd backend && php artisan serve --port=8000) & \

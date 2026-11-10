@@ -13,7 +13,6 @@ class HealthController extends Controller
         return response()->json([
             'status' => 'ok',
             'checks' => [
-                'app_key' => $configuration->hasAppKey(),
                 'storage_writable' => $configuration->storageWritable(),
             ],
         ]);
