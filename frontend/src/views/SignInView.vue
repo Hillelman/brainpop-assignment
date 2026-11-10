@@ -2,15 +2,11 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { SignIn } from '@clerk/vue'
+import { safeRedirect } from '@/lib/safeRedirect'
 
 const route = useRoute()
 
-const redirectUrl = computed(() => {
-  const target = route.query.redirect
-  return typeof target === 'string' && target.startsWith('/') && !target.startsWith('//')
-    ? target
-    : '/items'
-})
+const redirectUrl = computed(() => safeRedirect(route.query.redirect))
 </script>
 
 <template>

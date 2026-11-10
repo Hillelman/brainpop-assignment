@@ -32,6 +32,10 @@ describe('SignInView redirect (deep links)', () => {
     expect(await redirectFor('')).toBe('/items')
   })
 
+  it('rejects a backslash open-redirect', async () => {
+    expect(await redirectFor(`?redirect=${encodeURIComponent('/\\evil.com')}`)).toBe('/items')
+  })
+
   it.each(['https://evil.com', '//evil.com', 'items/42'])('rejects %s', async (value) => {
     expect(await redirectFor(`?redirect=${encodeURIComponent(value)}`)).toBe('/items')
   })
