@@ -80,7 +80,7 @@ Prerequisites:
   | `CLERK_SECRET_KEY` | the shell, or `backend/.env` (read automatically when unset) |
   | `CLERK_JWKS_URL`, `CLERK_ISSUER` | `backend/.env` |
 
-How sign-in works: the setup project calls `@clerk/testing` `clerk.signIn` with the user's email, which uses a Clerk sign-in token created with `CLERK_SECRET_KEY`. It does not depend on the user's password. The signed-in state is saved to `frontend/.auth/user.json` and reused by all specs.
+How sign-in works: the setup project calls `@clerk/testing` `clerk.signIn` with the user's email, which uses a Clerk sign-in token created with `CLERK_SECRET_KEY`. It does not depend on the user's password. The signed-in state is saved to `frontend/e2e/.auth/user.json` and reused by all specs. The `e2e/.auth/` directory is git-ignored because it holds session cookies.
 
 The E2E backend server overrides `JSON_STORAGE_PATH`, `CORS_ALLOWED_ORIGINS`, `CLERK_AUTHORIZED_PARTIES` and `CACHE_STORE` for the E2E ports. The ports can be changed with `E2E_FRONTEND_PORT` and `E2E_BACKEND_PORT`.
 
