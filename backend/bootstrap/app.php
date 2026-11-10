@@ -1,11 +1,9 @@
 <?php
 
-use App\Exceptions\AppNotConfiguredException;
 use App\Exceptions\DomainException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Encryption\MissingAppKeyException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -44,8 +42,6 @@ return Application::configure(basePath: dirname(__DIR__))
             );
 
             return match (true) {
-                $e instanceof AppNotConfiguredException => $error($e->getMessage(), $e->errorCode, $e->status, ['errors' => ['missing' => $e->missing]]),
-                $e instanceof MissingAppKeyException => $error('The application is not configured on the server.', 'app_not_configured', 503, ['errors' => ['missing' => ['APP_KEY']]]),
                 $e instanceof DomainException => $error($e->getMessage(), $e->errorCode, $e->status),
                 $e instanceof AuthenticationException,
                 $e instanceof UnauthorizedException => $error('Unauthenticated.', 'unauthenticated', 401),
