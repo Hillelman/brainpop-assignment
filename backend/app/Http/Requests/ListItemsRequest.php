@@ -16,6 +16,8 @@ class ListItemsRequest extends FormRequest
 
     private const DEFAULT_PER_PAGE = 15;
 
+    private const MAX_PAGE = 100000;
+
     public function authorize(): bool
     {
         return true;
@@ -30,7 +32,7 @@ class ListItemsRequest extends FormRequest
 
         $rules = [
             'state' => ['nullable', Rule::enum(StateScope::class)],
-            'page' => ['nullable', 'integer', 'min:1'],
+            'page' => ['nullable', 'integer', 'min:1', 'max:'.self::MAX_PAGE],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
             'sort' => ['nullable', 'string', Rule::in([...$sortKeys, ...array_map(fn (string $k): string => '-'.$k, $sortKeys)])],
             'filter' => ['nullable', 'array'],
