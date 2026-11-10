@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { bulkReview } from '@/api/items'
 import { Button } from '@/components/ui/button'
@@ -14,16 +14,16 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { ApiError } from '@/api/http'
 import { toUserMessage } from '@/lib/errors'
-import { NAME_MAX, cleanName, nameError } from '@/lib/personName'
+import { NAME_MAX, cleanName, nameError, sameName } from '@/lib/personName'
 import type { BulkReviewFailureReason, Item, ReviewDecision, RiskLevel } from '@/types/api'
 
 const props = defineProps<{ items: Item[] }>()
 const emit = defineEmits<{ completed: [] }>()
 
 const NOTE_MAX = 1000
+const MAX_LISTED = 3
 const NO_RISK = '__none__'
-const REASON_LABELS: Record<BulkReviewFailureReason, string> = {
-  same_person: 'skipped: you submitted them',
+const REASON_LABELS: Record<Exclude<BulkReviewFailureReason, 'same_person'>, string> = {
   already_reviewed: 'already reviewed',
   not_found: 'not found',
 }
@@ -32,6 +32,7 @@ const risk = ref<RiskLevel | null>(null)
 const note = ref('')
 const reviewerName = ref('')
 const serverNameError = ref<string | undefined>()
+const serverConflictIds = ref<number[]>([])
 const submitting = ref(false)
 const touched = ref(false)
 
@@ -42,13 +43,47 @@ const nameValidation = computed(() => nameError(reviewerName.value, 'Reviewer na
 const nameMessage = computed(
   () => serverNameError.value ?? (touched.value ? nameValidation.value : undefined),
 )
+const conflicts = computed(() =>
+  nameValidation.value
+    ? []
+    : props.items.filter(
+        (i) =>
+          sameName(i.submitter.name, reviewerName.value) || serverConflictIds.value.includes(i.id),
+      ),
+)
+const conflictMessage = computed(() => {
+  const titles = conflicts.value.map((i) => `“${i.title}”`)
+  if (titles.length === 0) return undefined
+  if (titles.length === 1) {
+    return `You submitted ${titles[0]}. Deselect it or use a different name.`
+  }
+  const shown = titles.slice(0, MAX_LISTED).join(', ')
+  const more = titles.length > MAX_LISTED ? ` and ${titles.length - MAX_LISTED} more` : ''
+  return `You submitted ${titles.length} of the selected items: ${shown}${more}… Deselect them or use a different name.`
+})
 const canSubmit = computed(
-  () => !submitting.value && pendingIds.value.length > 0 && !nameValidation.value,
+  () =>
+    !submitting.value &&
+    pendingIds.value.length > 0 &&
+    !nameValidation.value &&
+    conflicts.value.length === 0,
+)
+
+watch(
+  () => props.items,
+  () => {
+    serverConflictIds.value = []
+  },
 )
 const skipped = computed(() => props.items.length - pendingIds.value.length)
 
 function onRisk(value: unknown): void {
   risk.value = value === NO_RISK ? null : (value as RiskLevel)
+}
+
+function onNameInput(): void {
+  serverNameError.value = undefined
+  serverConflictIds.value = []
 }
 
 async function submit(decision: ReviewDecision): Promise<void> {
@@ -64,8 +99,12 @@ async function submit(decision: ReviewDecision): Promise<void> {
       note: note.value.trim() || null,
       reviewer_name: cleanName(reviewerName.value),
     })
-    const counts = new Map<BulkReviewFailureReason, number>()
-    for (const f of result.failed) counts.set(f.reason, (counts.get(f.reason) ?? 0) + 1)
+    const counts = new Map<Exclude<BulkReviewFailureReason, 'same_person'>, number>()
+    const samePersonIds: number[] = []
+    for (const f of result.failed) {
+      if (f.reason === 'same_person') samePersonIds.push(f.id)
+      else counts.set(f.reason, (counts.get(f.reason) ?? 0) + 1)
+    }
     const summary = [...counts].map(([reason, n]) => `${n} ${REASON_LABELS[reason]}`).join(', ')
     if (result.updated.length > 0) {
       toast.success(`${result.updated.length} reviewed`)
@@ -77,6 +116,10 @@ async function submit(decision: ReviewDecision): Promise<void> {
     }
     note.value = ''
     risk.value = null
+    if (samePersonIds.length > 0 && result.updated.length === 0) {
+      serverConflictIds.value = samePersonIds
+      return
+    }
     emit('completed')
   } catch (err) {
     const fieldError =
@@ -107,15 +150,25 @@ async function submit(decision: ReviewDecision): Promise<void> {
         aria-label="Reviewer name"
         autocomplete="off"
         required
-        :aria-invalid="!!nameMessage"
+        :aria-invalid="!!nameMessage || !!conflictMessage"
+        :aria-describedby="conflictMessage ? 'bulk-conflict-error' : undefined"
         :disabled="submitting"
-        @update:model-value="serverNameError = undefined"
+        @update:model-value="onNameInput"
       />
       <p class="text-xs text-muted-foreground">
         {{ cleanName(reviewerName).length }}/{{ NAME_MAX }}
       </p>
       <p v-if="nameMessage" class="text-sm text-destructive" data-test="error-reviewer-name">
         {{ nameMessage }}
+      </p>
+      <p
+        v-if="conflictMessage"
+        id="bulk-conflict-error"
+        role="alert"
+        class="text-sm text-destructive"
+        data-test="error-self-review"
+      >
+        {{ conflictMessage }}
       </p>
     </div>
     <div class="flex flex-col gap-2 sm:flex-row sm:items-start">
