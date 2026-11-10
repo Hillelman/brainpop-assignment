@@ -8,7 +8,7 @@ async function box(locator: ReturnType<Page['locator']>) {
   return b
 }
 
-test('Status, Risk and Submitter share a line and the date rows sit below, aligned', async ({
+test('Status, Risk and Submitter share a line; the date groups share one line behind More filters', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 })
@@ -21,22 +21,29 @@ test('Status, Risk and Submitter share a line and the date rows sit below, align
 
   const created = page.getByRole('group', { name: 'Created at' })
   const reviewed = page.getByRole('group', { name: 'Reviewed at' })
+  const toggle = page.locator('[data-test="toggle-more-filters"]')
+  await expect(created).toHaveCount(0)
+  await expect(toggle).toHaveText(/More filters/)
+
+  await toggle.click()
+  await expect(toggle).toHaveText(/Less filters/)
   const createdBox = await box(created)
   const reviewedBox = await box(reviewed)
-  expect(createdBox.y).toBeGreaterThanOrEqual(status.y + status.height)
-  expect(reviewedBox.y).toBeGreaterThanOrEqual(createdBox.y + createdBox.height)
+  expect(Math.abs(createdBox.y - reviewedBox.y)).toBeLessThanOrEqual(4)
+  expect(reviewedBox.x).toBeGreaterThanOrEqual(createdBox.x + createdBox.width)
 
-  const createdFrom = await box(page.getByLabel('Created at from'))
-  const reviewedFrom = await box(page.getByLabel('Reviewed at from'))
-  expect(Math.abs(createdFrom.x - reviewedFrom.x)).toBeLessThanOrEqual(2)
-
-  for (const [group, from] of [
-    [created, createdFrom],
-    [reviewed, reviewedFrom],
+  for (const [group, name] of [
+    [created, 'Created at from'],
+    [reviewed, 'Reviewed at from'],
   ] as const) {
     const label = await box(group.locator('[data-test="filter-group-label"]'))
+    const from = await box(page.getByLabel(name))
     expect(label.x + label.width).toBeLessThanOrEqual(from.x)
   }
+
+  await toggle.click()
+  await expect(created).toHaveCount(0)
+  await expect(reviewed).toHaveCount(0)
 })
 
 test('phone: no horizontal scroll and Clear filters stays on the title line', async ({ page }) => {
@@ -49,8 +56,9 @@ test('phone: no horizontal scroll and Clear filters stays on the title line', as
   const h1 = await box(page.getByRole('heading', { name: 'Review Queue' }))
   const buttonBox = await box(button)
   expect(Math.abs(buttonBox.y - h1.y)).toBeLessThanOrEqual(4)
-  const noOverflow = await page.evaluate(
-    'document.documentElement.scrollWidth <= window.innerWidth',
-  )
-  expect(noOverflow).toBe(true)
+  const fits = () => page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
+  expect(await fits()).toBe(true)
+  await page.locator('[data-test="toggle-more-filters"]').click()
+  await expect(page.getByRole('group', { name: 'Reviewed at' })).toBeVisible()
+  expect(await fits()).toBe(true)
 })

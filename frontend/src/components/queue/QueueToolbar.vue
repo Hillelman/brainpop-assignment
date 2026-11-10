@@ -10,6 +10,8 @@ defineProps<{
   query: QueryState
   filters: FilterMeta[]
   metaFailed: boolean
+  showGrouped: boolean
+  groupedId: string
 }>()
 
 const emit = defineEmits<{
@@ -32,6 +34,8 @@ const emit = defineEmits<{
       class="min-w-0 flex-1"
       :filters="filters"
       :model-value="query.filter"
+      :show-grouped="showGrouped"
+      :grouped-id="groupedId"
       @update:model-value="(v) => emit('update', { filter: v })"
     />
     <div class="relative w-full sm:w-72 sm:shrink-0">
