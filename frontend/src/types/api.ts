@@ -50,6 +50,8 @@ export interface FilterMeta {
   label: string
   type: 'select' | 'date' | 'text'
   options?: FilterOption[]
+  group?: string | null
+  group_label?: string | null
 }
 
 export interface SortMeta {
