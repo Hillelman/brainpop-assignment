@@ -5,6 +5,7 @@ import { toast } from 'vue-sonner'
 import { createItem } from '@/api/items'
 import { ApiError } from '@/api/http'
 import { toUserMessage } from '@/lib/errors'
+import { NAME_MAX, cleanName, nameError } from '@/lib/personName'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,22 +15,25 @@ const TITLE_MIN = 3
 const TITLE_MAX = 120
 const DESCRIPTION_MAX = 5000
 
-type Field = 'title' | 'description'
+type Field = 'title' | 'description' | 'submitter_name'
 
 const router = useRouter()
 const title = ref('')
 const description = ref('')
+const submitterName = ref('')
 const submitted = ref(false)
 const pending = ref(false)
 const submitError = ref<string | null>(null)
 const serverErrors = reactive<Record<Field, string | undefined>>({
   title: undefined,
   description: undefined,
+  submitter_name: undefined,
 })
 
 const clientErrors = computed<Record<Field, string | undefined>>(() => {
   const trimmed = title.value.trim()
   return {
+    submitter_name: nameError(submitterName.value, 'Your name'),
     title:
       trimmed.length < TITLE_MIN
         ? `Title must be at least ${TITLE_MIN} characters.`
@@ -58,18 +62,30 @@ async function submit(): Promise<void> {
   submitted.value = true
   serverErrors.title = undefined
   serverErrors.description = undefined
+  serverErrors.submitter_name = undefined
   submitError.value = null
-  if (clientErrors.value.title || clientErrors.value.description) return
+  if (
+    clientErrors.value.title ||
+    clientErrors.value.description ||
+    clientErrors.value.submitter_name
+  )
+    return
   pending.value = true
   try {
-    const item = await createItem({ title: title.value.trim(), description: description.value })
+    const item = await createItem({
+      title: title.value.trim(),
+      description: description.value,
+      submitter_name: cleanName(submitterName.value),
+    })
     toast.success('Item submitted')
     await router.push('/items/' + item.id)
   } catch (err) {
     if (err instanceof ApiError && err.status === 422) {
       serverErrors.title = err.fieldErrors.title?.[0]
       serverErrors.description = err.fieldErrors.description?.[0]
-      if (!serverErrors.title && !serverErrors.description) toast.error(toUserMessage(err))
+      serverErrors.submitter_name = err.fieldErrors.submitter_name?.[0]
+      if (!serverErrors.title && !serverErrors.description && !serverErrors.submitter_name)
+        toast.error(toUserMessage(err))
     } else {
       submitError.value = toUserMessage(err)
     }
@@ -81,6 +97,27 @@ async function submit(): Promise<void> {
 
 <template>
   <form class="space-y-4" novalidate data-test="submit-form" @submit.prevent="submit">
+    <div class="space-y-1">
+      <Label for="submitter-name">Your name</Label>
+      <Input
+        id="submitter-name"
+        v-model="submitterName"
+        autocomplete="off"
+        required
+        :aria-invalid="!!errorFor('submitter_name')"
+        @update:model-value="clearServer('submitter_name')"
+      />
+      <p class="text-xs text-muted-foreground">
+        {{ cleanName(submitterName).length }}/{{ NAME_MAX }}
+      </p>
+      <p
+        v-if="errorFor('submitter_name')"
+        class="text-sm text-destructive"
+        data-test="error-submitter-name"
+      >
+        {{ errorFor('submitter_name') }}
+      </p>
+    </div>
     <div class="space-y-1">
       <Label for="item-title">Title</Label>
       <Input

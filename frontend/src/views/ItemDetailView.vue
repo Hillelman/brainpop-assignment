@@ -68,6 +68,7 @@ async function copyLink(): Promise<void> {
       <ReviewForm
         v-if="item.status === 'pending'"
         :item-id="item.id"
+        :submitter-name="item.submitter.name"
         @reviewed="onReviewed"
         @not-found="onReviewNotFound"
       />

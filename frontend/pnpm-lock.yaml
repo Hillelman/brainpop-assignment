@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@clerk/vue':
-        specifier: ^2.5.19
-        version: 2.5.19(vue@3.5.45(typescript@6.0.3))
       '@lucide/vue':
         specifier: ^1.70.0
         version: 1.70.0(vue@3.5.45(typescript@6.0.3))
@@ -178,12 +175,6 @@ packages:
         optional: true
       cypress:
         optional: true
-
-  '@clerk/vue@2.5.19':
-    resolution: {integrity: sha512-ssYpjV5tqgz3rP+KE5cqOkG7lQa9P2KQyutPKRxZ1UdbAYn1PfzeeieTm1BpirBlZOckYiv521eZLhf985PXTA==}
-    engines: {node: '>=20.9.0'}
-    peerDependencies:
-      vue: ^3.2.0
 
   '@eslint-community/eslint-utils@4.10.1':
     resolution: {integrity: sha512-cuadcxVFE8sDK6iWJbs8Sn0av2Nrh2QSGQhVlBW9AaAHqHwjWsZHT8LJ4hFGPh7ASBV2deFdM7H/DPjulmh8rg==}
@@ -1789,14 +1780,6 @@ snapshots:
       dotenv: 17.2.2
     optionalDependencies:
       '@playwright/test': 1.65.0
-    transitivePeerDependencies:
-      - react
-      - react-dom
-
-  '@clerk/vue@2.5.19(vue@3.5.45(typescript@6.0.3))':
-    dependencies:
-      '@clerk/shared': 4.44.1
-      vue: 3.5.45(typescript@6.0.3)
     transitivePeerDependencies:
       - react
       - react-dom

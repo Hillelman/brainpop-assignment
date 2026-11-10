@@ -2,12 +2,6 @@ export type ItemStatus = 'pending' | 'approved' | 'rejected'
 export type RiskLevel = 'low' | 'medium' | 'high'
 export type ReviewDecision = 'approved' | 'rejected'
 
-export interface User {
-  id: number
-  name: string
-  email: string
-}
-
 export interface PersonRef {
   id: number
   name: string
@@ -68,7 +62,7 @@ export interface FiltersResponse {
   sorts: SortMeta[]
 }
 
-export type BulkReviewFailureReason = 'not_found' | 'already_reviewed'
+export type BulkReviewFailureReason = 'not_found' | 'already_reviewed' | 'same_person'
 
 export interface BulkReviewResult {
   updated: Item[]
@@ -80,11 +74,13 @@ export interface BulkReviewPayload {
   decision: ReviewDecision
   risk?: RiskLevel | null
   note?: string | null
+  reviewer_name: string
 }
 
 export interface NewItemPayload {
   title: string
   description: string
+  submitter_name: string
 }
 
 export interface ApiErrorBody {

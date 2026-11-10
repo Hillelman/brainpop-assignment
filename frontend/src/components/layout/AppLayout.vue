@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
-import { UserButton } from '@clerk/vue'
 </script>
 
 <template>
@@ -22,7 +21,6 @@ import { UserButton } from '@clerk/vue'
             >Submit</RouterLink
           >
         </nav>
-        <UserButton />
       </div>
     </header>
     <main class="mx-auto max-w-6xl p-4">
