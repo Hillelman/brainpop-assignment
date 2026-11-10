@@ -1,4 +1,4 @@
-import { expect, test, uniqueTitle } from '../fixtures.ts'
+import { expect, test, uniqueName, uniqueTitle } from '../fixtures.ts'
 
 test('search fires one request after typing stops and clearing restores the list', async ({
   page,
@@ -6,7 +6,7 @@ test('search fires one request after typing stops and clearing restores the list
   queuePage,
 }) => {
   const title = uniqueTitle('Quokka search')
-  await submitPage.submit(title)
+  await submitPage.submit({ title, submitterName: uniqueName('Search Person') })
   await queuePage.goto()
   await expect(queuePage.dataRows.first()).toBeVisible()
   const initialCount = await queuePage.dataRows.count()

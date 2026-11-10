@@ -1,4 +1,4 @@
-import { expect, test } from '../fixtures.ts'
+import { expect, test, uniqueName, uniqueTitle } from '../fixtures.ts'
 
 test('status filter and title sort apply, sync to the URL and survive reload', async ({
   page,
@@ -29,4 +29,21 @@ test('status filter and title sort apply, sync to the URL and survive reload', a
   await page.reload()
   await expect(page).toHaveURL(/sort=title/)
   await assertView()
+})
+
+test('submitter filter narrows the list to that submitter', async ({
+  page,
+  submitPage,
+  queuePage,
+}) => {
+  const submitterName = uniqueName('Filter Person')
+  const title = uniqueTitle('Submitter filter')
+  await submitPage.submit({ title, submitterName })
+
+  await queuePage.goto()
+  await queuePage.chooseFilter('Submitter', submitterName)
+
+  await expect(page).toHaveURL(/submitter/)
+  await expect(queuePage.dataRows).toHaveCount(1)
+  await expect(queuePage.row(title)).toContainText(submitterName)
 })
