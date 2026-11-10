@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
-use App\Domain\Entities\User;
 use App\DTOs\BulkReviewData;
 use App\DTOs\BulkReviewResult;
 use App\Repositories\Contracts\ItemRepository;
 use App\Repositories\Contracts\ReviewRepository;
+use App\Repositories\Contracts\UserRepository;
 use Carbon\CarbonImmutable;
 
 class ReviewService
@@ -15,14 +15,19 @@ class ReviewService
 
     public const ALREADY_REVIEWED = 'already_reviewed';
 
+    public const SAME_PERSON = 'same_person';
+
     public function __construct(
         private readonly ItemRepository $items,
         private readonly ReviewRepository $reviews,
+        private readonly UserRepository $users,
     ) {}
 
-    /** Reviews every pending item in the batch atomically; items that cannot be reviewed are reported as failures. */
-    public function bulkReview(BulkReviewData $data, User $reviewer): BulkReviewResult
+    /** Reviews every pending item in the batch atomically; items that cannot be reviewed (including the reviewer's own) are reported as failures. */
+    public function bulkReview(BulkReviewData $data, string $reviewerName): BulkReviewResult
     {
+        $reviewer = $this->users->findOrCreateByName($reviewerName);
+
         return $this->items->transaction(function () use ($data, $reviewer): BulkReviewResult {
             $found = $this->items->findMany($data->ids);
             $now = CarbonImmutable::now();
@@ -40,6 +45,12 @@ class ReviewService
 
                 if ($item->status->isReviewed()) {
                     $failed[] = ['id' => $id, 'reason' => self::ALREADY_REVIEWED];
+
+                    continue;
+                }
+
+                if ($item->submitterId === $reviewer->id) {
+                    $failed[] = ['id' => $id, 'reason' => self::SAME_PERSON];
 
                     continue;
                 }

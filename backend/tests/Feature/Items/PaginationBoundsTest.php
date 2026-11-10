@@ -1,12 +1,11 @@
 <?php
 
-use Tests\Support\ActsAsClerkUser;
 use Tests\Support\UsesTempJsonStorage;
 
-uses(ActsAsClerkUser::class, UsesTempJsonStorage::class);
+uses(UsesTempJsonStorage::class);
 
 it('rejects an out-of-range page with a validation error', function (string $uri) {
-    $this->actingAsClerk()->getJson($uri)
+    $this->getJson($uri)
         ->assertStatus(422)
         ->assertJson(['code' => 'validation_failed'])
         ->assertJsonValidationErrors('page');
@@ -17,7 +16,7 @@ it('rejects an out-of-range page with a validation error', function (string $uri
 ]);
 
 it('returns an empty page at the maximum page', function () {
-    $this->actingAsClerk()->getJson('/api/items?page=100000')
+    $this->getJson('/api/items?page=100000')
         ->assertOk()
         ->assertJsonPath('data', [])
         ->assertJsonPath('meta.total', 0)

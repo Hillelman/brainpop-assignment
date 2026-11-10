@@ -4,7 +4,6 @@ namespace App\Queries\Filters;
 
 use App\Enums\ItemStatus;
 use App\Queries\Filters\Contracts\Filter;
-use App\Queries\QueryContext;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 
@@ -20,7 +19,7 @@ class StatusFilter implements Filter
         return ['nullable', 'string', Rule::enum(ItemStatus::class)];
     }
 
-    public function apply(Collection $items, mixed $value, QueryContext $ctx): Collection
+    public function apply(Collection $items, mixed $value): Collection
     {
         return $items->filter(fn ($item): bool => $item->status->value === $value);
     }

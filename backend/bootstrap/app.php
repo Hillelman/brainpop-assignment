@@ -1,9 +1,7 @@
 <?php
 
 use App\Exceptions\AppNotConfiguredException;
-use App\Exceptions\AuthNotConfiguredException;
 use App\Exceptions\DomainException;
-use App\Http\Middleware\AuthenticateWithClerk;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -27,7 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias(['auth.clerk' => AuthenticateWithClerk::class]);
+        // The API is public and stateless; the framework's default api middleware group is all it needs.
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $wantsJson = fn (Request $request): bool => $request->is('api/*') || $request->expectsJson();
@@ -46,7 +44,6 @@ return Application::configure(basePath: dirname(__DIR__))
             );
 
             return match (true) {
-                $e instanceof AuthNotConfiguredException,
                 $e instanceof AppNotConfiguredException => $error($e->getMessage(), $e->errorCode, $e->status, ['errors' => ['missing' => $e->missing]]),
                 $e instanceof MissingAppKeyException => $error('The application is not configured on the server.', 'app_not_configured', 503, ['errors' => ['missing' => ['APP_KEY']]]),
                 $e instanceof DomainException => $error($e->getMessage(), $e->errorCode, $e->status),

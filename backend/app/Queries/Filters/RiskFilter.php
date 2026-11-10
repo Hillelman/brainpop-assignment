@@ -4,7 +4,6 @@ namespace App\Queries\Filters;
 
 use App\Enums\RiskLevel;
 use App\Queries\Filters\Contracts\Filter;
-use App\Queries\QueryContext;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 
@@ -22,7 +21,7 @@ class RiskFilter implements Filter
         return ['nullable', 'string', Rule::in($this->values())];
     }
 
-    public function apply(Collection $items, mixed $value, QueryContext $ctx): Collection
+    public function apply(Collection $items, mixed $value): Collection
     {
         return $items->filter(fn ($item): bool => ($item->risk?->value ?? self::NONE) === $value);
     }

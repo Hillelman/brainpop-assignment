@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\ItemReviewController;
 use App\Http\Controllers\Api\ItemReviewHistoryController;
 use Illuminate\Support\Facades\Route;
 
-// Authenticated item routes are registered here (inside the auth.clerk group in routes/api.php).
+// Item routes are registered here (inside the group in routes/api.php).
 Route::get('/items', [ItemController::class, 'index']);
 Route::get('/items/search', [ItemController::class, 'search']);
 Route::get('/items/filters', ItemFilterController::class);

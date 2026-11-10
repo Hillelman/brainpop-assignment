@@ -18,7 +18,7 @@ it('returns JSON 404 for unknown api routes without an Accept header', function 
 });
 
 it('returns 405 JSON for a wrong method', function () {
-    $this->postJson('/api/me')
+    $this->postJson('/api/health')
         ->assertStatus(405)
         ->assertJson(['code' => 'method_not_allowed']);
 });

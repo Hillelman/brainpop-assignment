@@ -13,7 +13,7 @@ class ItemReviewController extends Controller
 {
     public function store(BulkReviewRequest $request, ReviewService $service, ItemViewFactory $views): JsonResponse
     {
-        $result = $service->bulkReview($request->toData(), $request->user());
+        $result = $service->bulkReview($request->toData(), $request->reviewerName());
 
         return response()->json([
             'data' => [

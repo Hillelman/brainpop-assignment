@@ -3,7 +3,6 @@
 namespace App\Queries\Filters\Contracts;
 
 use App\Domain\Entities\Item;
-use App\Queries\QueryContext;
 use Illuminate\Support\Collection;
 
 interface Filter
@@ -22,7 +21,7 @@ interface Filter
      * @param  Collection<int, Item>  $items
      * @return Collection<int, Item>
      */
-    public function apply(Collection $items, mixed $value, QueryContext $ctx): Collection;
+    public function apply(Collection $items, mixed $value): Collection;
 
     /**
      * @return array{key: string, label: string, type: 'select'|'date'|'text', options?: list<array{value: string, label: string}>}

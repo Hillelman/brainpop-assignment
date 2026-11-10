@@ -3,7 +3,6 @@
 namespace App\Queries;
 
 use App\Domain\Entities\Item;
-use App\Domain\Entities\User;
 use App\Repositories\Contracts\ItemRepository;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -22,17 +21,15 @@ class ItemQuery
      *
      * @return LengthAwarePaginator<int, ItemView>
      */
-    public function run(ItemQueryParams $params, User $user): LengthAwarePaginator
+    public function run(ItemQueryParams $params): LengthAwarePaginator
     {
-        $ctx = new QueryContext($user);
-
         $items = $params->state->apply($this->items->all());
         $items = $this->search($items, $params->search);
 
         foreach ($params->filters as $key => $value) {
             $filter = $this->filters->get($key);
             if ($filter !== null && $value !== null && $value !== '') {
-                $items = $filter->apply($items, $value, $ctx);
+                $items = $filter->apply($items, $value);
             }
         }
 

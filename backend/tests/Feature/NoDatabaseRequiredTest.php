@@ -1,12 +1,8 @@
 <?php
 
-use App\Auth\ClerkJwksTokenVerifier;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
-use Tests\Support\ActsAsClerkUser;
 use Tests\Support\UsesTempJsonStorage;
 
-uses(ActsAsClerkUser::class, UsesTempJsonStorage::class);
+uses(UsesTempJsonStorage::class);
 
 function configWithEnvUnset(string $file, string $envKey): mixed
 {
@@ -38,24 +34,8 @@ it('defaults the queue connection to sync when QUEUE_CONNECTION is unset', funct
     expect(configWithEnvUnset('queue', 'QUEUE_CONNECTION')['default'])->toBe('sync');
 });
 
-it('serves /api/me without any sqlite database file', function () {
+it('serves /api/items without any sqlite database file', function () {
     config(['database.default' => 'sqlite', 'database.connections.sqlite.database' => '/nonexistent/database.sqlite']);
 
-    $this->actingAsClerk('user_1', 'a@example.com')->getJson('/api/me')->assertOk();
-});
-
-it('caches the JWKS so a second verification makes no extra HTTP call', function () {
-    Cache::flush();
-    config(['clerk.jwks_url' => 'https://clerk.test/jwks', 'clerk.issuer' => '', 'clerk.authorized_parties' => []]);
-    Http::fake(['clerk.test/*' => Http::response(['keys' => []])]);
-
-    $verifier = new ClerkJwksTokenVerifier;
-    foreach ([1, 2] as $_) {
-        try {
-            $verifier->verify('not.a.jwt');
-        } catch (Throwable) {
-        }
-    }
-
-    Http::assertSentCount(1);
+    $this->getJson('/api/items')->assertOk();
 });
