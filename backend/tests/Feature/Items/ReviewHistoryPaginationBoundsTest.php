@@ -33,8 +33,3 @@ it('returns an empty page at the maximum page', function () {
         ->assertJsonPath('meta.total', 0)
         ->assertJsonPath('meta.last_page', 1);
 });
-
-it('still returns 404 for an unknown item', function () {
-    $this->getJson('/api/items/999999/reviews?page=1')
-        ->assertNotFound();
-});

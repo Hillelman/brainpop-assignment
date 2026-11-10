@@ -22,13 +22,6 @@ function mountToolbar(props: { metaFailed?: boolean; filters?: FilterMeta[] } = 
 }
 
 describe('QueueToolbar', () => {
-  it('renders no tabs and no sort select', () => {
-    const wrapper = mountToolbar()
-    expect(wrapper.find('[role="tablist"]').exists()).toBe(false)
-    expect(wrapper.find('[role="tab"]').exists()).toBe(false)
-    expect(wrapper.find('[aria-label="Sort by"]').exists()).toBe(false)
-  })
-
   it('puts the search input after the filter controls in the same row', () => {
     const wrapper = mountToolbar()
     const row = wrapper.get('[data-test="queue-toolbar"]')

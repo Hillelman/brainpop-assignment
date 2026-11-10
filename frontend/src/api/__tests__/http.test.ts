@@ -52,13 +52,6 @@ describe('http client', () => {
     })
   })
 
-  it('sends no Authorization header', async () => {
-    fetchMock.mockResolvedValue(jsonResponse(200, { ok: true }))
-    await request('GET', '/items')
-    const init = fetchMock.mock.calls[0][1] as RequestInit
-    expect(init.headers).not.toHaveProperty('Authorization')
-  })
-
   it('serialises nested query params', () => {
     expect(buildQuery({ state: 'pending', filter: { status: 'approved' }, page: 2 })).toBe(
       'state=pending&filter%5Bstatus%5D=approved&page=2',

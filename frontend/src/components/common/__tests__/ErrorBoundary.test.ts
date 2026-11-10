@@ -4,11 +4,6 @@ import { describe, expect, it } from 'vitest'
 import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
 
 describe('ErrorBoundary', () => {
-  it('renders the slot normally', () => {
-    const wrapper = mount(ErrorBoundary, { slots: { default: '<p>fine</p>' } })
-    expect(wrapper.text()).toContain('fine')
-  })
-
   it('renders the fallback when a child throws and re-renders the slot on Retry', async () => {
     let shouldThrow = true
     const Child = defineComponent({

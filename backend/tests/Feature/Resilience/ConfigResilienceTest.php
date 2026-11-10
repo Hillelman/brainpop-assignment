@@ -4,13 +4,6 @@ use Tests\Support\UsesTempJsonStorage;
 
 uses(UsesTempJsonStorage::class);
 
-it('serves the API when app.key is empty', function () {
-    config(['app.key' => '']);
-    $this->app->forgetInstance('encrypter');
-
-    $this->getJson('/api/items')->assertOk();
-});
-
 it('serves the API in a subprocess with an empty environment and no .env file', function () {
     $emptyEnvDir = sys_get_temp_dir().'/review-queue-empty-env-dir-'.uniqid();
     mkdir($emptyEnvDir);

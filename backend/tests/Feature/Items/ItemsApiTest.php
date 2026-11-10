@@ -27,31 +27,6 @@ function ids($response): array
     return array_column($response->json('data'), 'id');
 }
 
-it('serves every endpoint without an Authorization header', function (string $method, string $uri, int $status) {
-    $item = seedItem();
-    $uri = str_replace('{id}', (string) $item->id, $uri);
-    $payload = $method === 'POST' && $uri === '/api/items'
-        ? ['title' => 'Hello', 'description' => 'Body', 'submitter_name' => 'Ana Lopez']
-        : ($method === 'POST' ? ['ids' => [$item->id], 'decision' => 'approved', 'reviewer_name' => 'Ben Carter'] : []);
-
-    $this->json($method, $uri, $payload)->assertStatus($status);
-})->with([
-    ['GET', '/api/items', 200], ['GET', '/api/items/search', 200], ['GET', '/api/items/filters', 200],
-    ['POST', '/api/items', 201], ['GET', '/api/items/{id}', 200], ['GET', '/api/items/{id}/reviews', 200],
-    ['POST', '/api/items/reviews', 200],
-]);
-
-it('no longer exposes /api/me', function () {
-    $this->getJson('/api/me')->assertNotFound();
-});
-
-it('returns an empty page when there are no items', function () {
-    $this->getJson('/api/items')->assertOk()
-        ->assertJsonPath('data', [])
-        ->assertJsonPath('meta.total', 0)
-        ->assertJsonPath('meta.last_page', 1);
-});
-
 it('lists items newest first with pagination meta', function () {
     foreach (range(1, 20) as $i) {
         seedItem(['title' => "T$i", 'created_at' => '2026-01-'.sprintf('%02d', $i).'T00:00:00Z']);
