@@ -1,1 +1,15 @@
 .factory/
+
+# Dependencies
+vendor/
+node_modules/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Data and reports
+backend/storage/app/data/*.json
+frontend/playwright-report/
+frontend/test-results/
