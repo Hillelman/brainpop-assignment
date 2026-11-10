@@ -1,7 +1,15 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { RouterView } from 'vue-router'
+import AppLayout from '@/components/layout/AppLayout.vue'
+import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
+import AppToaster from '@/components/common/AppToaster.vue'
+</script>
 
 <template>
-  <main class="min-h-screen bg-background text-foreground">
-    <h1 class="p-6 text-2xl font-semibold">Review Queue</h1>
-  </main>
+  <ErrorBoundary>
+    <AppLayout>
+      <RouterView />
+    </AppLayout>
+  </ErrorBoundary>
+  <AppToaster />
 </template>
