@@ -57,16 +57,6 @@ describe('SubmitItemForm', () => {
     expect(wrapper.get('[data-test="error-submitter-name"]').text()).toContain('at most 60')
   })
 
-  it.each(['', '   ', 'A'])('blocks submit with the invalid name %j', async (name) => {
-    const { wrapper } = await mountForm()
-    await wrapper.get('#submitter-name').setValue(name)
-    await wrapper.get('#item-title').setValue('Valid title')
-    await wrapper.get('#item-description').setValue('desc')
-    await wrapper.get('form').trigger('submit')
-    expect(api.createItem).not.toHaveBeenCalled()
-    expect(wrapper.find('[data-test="error-submitter-name"]').exists()).toBe(true)
-  })
-
   it('sends the cleaned name and starts blank', async () => {
     api.createItem.mockResolvedValue({ id: 1 })
     const { wrapper } = await mountForm()

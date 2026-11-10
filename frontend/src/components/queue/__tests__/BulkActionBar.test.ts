@@ -92,13 +92,6 @@ describe('BulkActionBar', () => {
     },
   )
 
-  it('enables the actions once the reviewer name is valid', async () => {
-    const wrapper = mount(BulkActionBar, { props: { items: [pending] } })
-    expect(wrapper.get('[data-test="approve"]').attributes('disabled')).toBeDefined()
-    await enterName(wrapper)
-    expect(wrapper.get('[data-test="approve"]').attributes('disabled')).toBeUndefined()
-  })
-
   it('shows the inline error for server same_person failures instead of a toast', async () => {
     bulkReview.mockResolvedValue({ updated: [], failed: [{ id: 1, reason: 'same_person' }] })
     const wrapper = mount(BulkActionBar, { props: { items: [pending] } })

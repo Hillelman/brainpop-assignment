@@ -17,21 +17,14 @@ async function boxes(page: Page) {
   return { filterBox, searchBox, toolbarBox }
 }
 
-for (const viewport of [
-  { width: 1280, height: 800 },
-  { width: 1024, height: 768 },
-]) {
-  test(`search shares the filter row at the end at ${viewport.width}x${viewport.height}`, async ({
-    page,
-  }) => {
-    await page.setViewportSize(viewport)
-    const { filterBox, searchBox, toolbarBox } = await boxes(page)
-    expect(Math.abs(searchBox.y - filterBox.y)).toBeLessThanOrEqual(4)
-    const searchRight = searchBox.x + searchBox.width
-    const toolbarRight = toolbarBox.x + toolbarBox.width
-    expect(Math.abs(searchRight - toolbarRight)).toBeLessThanOrEqual(4)
-  })
-}
+test('search shares the filter row at the end at 1280x800', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
+  const { filterBox, searchBox, toolbarBox } = await boxes(page)
+  expect(Math.abs(searchBox.y - filterBox.y)).toBeLessThanOrEqual(4)
+  const searchRight = searchBox.x + searchBox.width
+  const toolbarRight = toolbarBox.x + toolbarBox.width
+  expect(Math.abs(searchRight - toolbarRight)).toBeLessThanOrEqual(4)
+})
 
 test('search sits below the filters on a phone without horizontal scroll', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 })

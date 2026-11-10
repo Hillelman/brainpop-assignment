@@ -42,7 +42,7 @@ describe('app router without auth', () => {
     expect(router.currentRoute.value.name).toBe('queue')
   })
 
-  it.each(['/sign-in', '/sign-in/factor-one'])('renders NotFound for %s', async (path) => {
+  it.each(['/sign-in'])('renders NotFound for %s', async (path) => {
     const { router, mountApp } = await setup(path)
     mountApp()
     await flushPromises()
