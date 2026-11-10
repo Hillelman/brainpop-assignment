@@ -9,9 +9,18 @@ vi.mock('@/api/items', () => ({ bulkReview: (...a: unknown[]) => bulkReview(...a
 const toast = vi.hoisted(() => ({ success: vi.fn(), warning: vi.fn(), error: vi.fn() }))
 vi.mock('vue-sonner', () => ({ toast }))
 
-const pending = { id: 1, status: 'pending' } as Item
-const pending2 = { id: 2, status: 'pending' } as Item
-const reviewed = { id: 3, status: 'approved' } as Item
+function makeItem(
+  id: number,
+  status: Item['status'],
+  submitter = 'Sam Submitter',
+  title = `Item ${id}`,
+) {
+  return { id, status, title, submitter: { name: submitter } } as Item
+}
+
+const pending = makeItem(1, 'pending')
+const pending2 = makeItem(2, 'pending')
+const reviewed = makeItem(3, 'approved')
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -90,15 +99,94 @@ describe('BulkActionBar', () => {
     expect(wrapper.get('[data-test="approve"]').attributes('disabled')).toBeUndefined()
   })
 
-  it('reports same_person skips and still completes', async () => {
+  it('shows the inline error for server same_person failures instead of a toast', async () => {
     bulkReview.mockResolvedValue({ updated: [], failed: [{ id: 1, reason: 'same_person' }] })
     const wrapper = mount(BulkActionBar, { props: { items: [pending] } })
     await enterName(wrapper)
     await wrapper.get('[data-test="approve"]').trigger('click')
     await flushPromises()
-    expect(toast.warning).toHaveBeenCalledWith('1 skipped: you submitted them')
-    expect(toast.success).not.toHaveBeenCalled()
+    expect(wrapper.get('[role="alert"]').text()).toBe(
+      'You submitted “Item 1”. Deselect it or use a different name.',
+    )
+    expect(toast.warning).not.toHaveBeenCalled()
+    expect(wrapper.get('[data-test="approve"]').attributes('disabled')).toBeDefined()
+    await enterName(wrapper, 'Other Person')
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('still toasts already_reviewed alongside a same_person failure', async () => {
+    bulkReview.mockResolvedValue({
+      updated: [pending2],
+      failed: [
+        { id: 1, reason: 'same_person' },
+        { id: 4, reason: 'already_reviewed' },
+      ],
+    })
+    const wrapper = mount(BulkActionBar, { props: { items: [pending, pending2] } })
+    await enterName(wrapper)
+    await wrapper.get('[data-test="approve"]').trigger('click')
+    await flushPromises()
+    expect(toast.warning).toHaveBeenCalledWith('1 already reviewed')
     expect(wrapper.emitted('completed')).toHaveLength(1)
+  })
+
+  describe('self-review conflicts', () => {
+    const own = makeItem(10, 'pending', 'Ana Lopez', 'My doc')
+
+    it('shows the inline error and disables the actions', async () => {
+      const wrapper = mount(BulkActionBar, { props: { items: [own, pending] } })
+      await enterName(wrapper, 'Ana Lopez')
+      const alert = wrapper.get('[role="alert"]')
+      expect(alert.text()).toBe('You submitted “My doc”. Deselect it or use a different name.')
+      const input = wrapper.get('input[aria-label="Reviewer name"]')
+      expect(input.attributes('aria-invalid')).toBe('true')
+      expect(input.attributes('aria-describedby')).toBe(alert.attributes('id'))
+      expect(wrapper.get('[data-test="approve"]').attributes('disabled')).toBeDefined()
+      expect(wrapper.get('[data-test="reject"]').attributes('disabled')).toBeDefined()
+    })
+
+    it('lists at most 3 titles and counts the rest', async () => {
+      const items = [1, 2, 3, 4, 5].map((n) => makeItem(20 + n, 'pending', 'Ana Lopez', `T${n}`))
+      const wrapper = mount(BulkActionBar, { props: { items } })
+      await enterName(wrapper, 'Ana Lopez')
+      expect(wrapper.get('[role="alert"]').text()).toBe(
+        'You submitted 5 of the selected items: “T1”, “T2”, “T3” and 2 more… Deselect them or use a different name.',
+      )
+    })
+
+    it('matches after normalization but not across accents', async () => {
+      const wrapper = mount(BulkActionBar, { props: { items: [own] } })
+      await enterName(wrapper, '  ana   LOPEZ ')
+      expect(wrapper.find('[role="alert"]').exists()).toBe(true)
+      const accented = mount(BulkActionBar, {
+        props: { items: [makeItem(11, 'pending', 'Jose Diaz')] },
+      })
+      await enterName(accented, 'José Diaz')
+      expect(accented.find('[role="alert"]').exists()).toBe(false)
+      expect(accented.get('[data-test="approve"]').attributes('disabled')).toBeUndefined()
+    })
+
+    it('clears when the conflicting item is deselected', async () => {
+      const wrapper = mount(BulkActionBar, { props: { items: [own, pending] } })
+      await enterName(wrapper, 'Ana Lopez')
+      await wrapper.setProps({ items: [pending] })
+      expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+      expect(wrapper.get('[data-test="approve"]').attributes('disabled')).toBeUndefined()
+    })
+
+    it('shows no conflict message while the name is invalid', async () => {
+      const wrapper = mount(BulkActionBar, { props: { items: [makeItem(12, 'pending', 'A')] } })
+      await enterName(wrapper, 'A')
+      expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    })
+
+    it('renders HTML in titles as literal text', async () => {
+      const html = makeItem(13, 'pending', 'Ana Lopez', '<b>x</b>')
+      const wrapper = mount(BulkActionBar, { props: { items: [html] } })
+      await enterName(wrapper, 'Ana Lopez')
+      expect(wrapper.get('[role="alert"]').text()).toContain('“<b>x</b>”')
+      expect(wrapper.find('[role="alert"] b').exists()).toBe(false)
+    })
   })
 
   it('shows a 422 on reviewer_name inline and does not complete', async () => {
