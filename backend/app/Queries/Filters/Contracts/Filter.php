@@ -24,7 +24,9 @@ interface Filter
     public function apply(Collection $items, mixed $value): Collection;
 
     /**
-     * @return array{key: string, label: string, type: 'select'|'date'|'text', options?: list<array{value: string, label: string}>}
+     * Date filters may set `group` and `group_label` so the UI lays related ranges out as one labelled row.
+     *
+     * @return array{key: string, label: string, type: 'select'|'date'|'text', options?: list<array{value: string, label: string}>, group?: string, group_label?: string}
      */
     public function meta(): array;
 }

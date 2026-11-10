@@ -27,6 +27,12 @@ class CreatedFromFilter implements Filter
 
     public function meta(): array
     {
-        return ['key' => $this->key(), 'label' => 'Created from', 'type' => 'date'];
+        return [
+            'key' => $this->key(),
+            'label' => 'From',
+            'type' => 'date',
+            'group' => 'created_at',
+            'group_label' => 'Created at',
+        ];
     }
 }
