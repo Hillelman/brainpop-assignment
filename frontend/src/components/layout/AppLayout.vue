@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import ThemeToggle from '@/components/layout/ThemeToggle.vue'
 </script>
 
 <template>
@@ -21,6 +22,7 @@ import { RouterLink } from 'vue-router'
             >Submit</RouterLink
           >
         </nav>
+        <ThemeToggle />
       </div>
     </header>
     <main class="mx-auto max-w-6xl p-4">
