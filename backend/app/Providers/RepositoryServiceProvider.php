@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Queries\Filters\LatestReviewDates;
 use App\Repositories\Contracts\ItemRepository;
 use App\Repositories\Contracts\ReviewRepository;
 use App\Repositories\Contracts\UserRepository;
@@ -19,5 +20,6 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->scoped(UserRepository::class, JsonUserRepository::class);
         $this->app->scoped(ItemRepository::class, JsonItemRepository::class);
         $this->app->scoped(ReviewRepository::class, JsonReviewRepository::class);
+        $this->app->scoped(LatestReviewDates::class);
     }
 }

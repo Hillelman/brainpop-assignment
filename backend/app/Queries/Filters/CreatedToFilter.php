@@ -28,6 +28,12 @@ class CreatedToFilter implements Filter
 
     public function meta(): array
     {
-        return ['key' => $this->key(), 'label' => 'Created to', 'type' => 'date'];
+        return [
+            'key' => $this->key(),
+            'label' => 'To',
+            'type' => 'date',
+            'group' => 'created_at',
+            'group_label' => 'Created at',
+        ];
     }
 }

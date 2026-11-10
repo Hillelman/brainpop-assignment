@@ -2,6 +2,8 @@
 
 use App\Queries\Filters\CreatedFromFilter;
 use App\Queries\Filters\CreatedToFilter;
+use App\Queries\Filters\ReviewedFromFilter;
+use App\Queries\Filters\ReviewedToFilter;
 use App\Queries\Filters\RiskFilter;
 use App\Queries\Filters\StatusFilter;
 use App\Queries\Filters\SubmitterFilter;
@@ -22,6 +24,8 @@ return [
         SubmitterFilter::class,
         CreatedFromFilter::class,
         CreatedToFilter::class,
+        ReviewedFromFilter::class,
+        ReviewedToFilter::class,
     ],
 
     'sorts' => [
