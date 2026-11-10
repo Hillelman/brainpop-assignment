@@ -31,7 +31,7 @@ The queue is at `/items`. Everything you set here is stored in the URL, so you c
 - **Tabs**: **Pending** (not yet reviewed, the default), **Reviewed** (approved or rejected) and **All**.
 - **Search**: type in the search box to match title and description, case-insensitive, up to 100 characters. Results update after a short pause (300 ms). The **x** button clears the search.
 - **Filters**: Status, Risk, Submitter (everyone or mine), Created from and Created to. The controls come from the API, so new filters appear automatically. **Clear filters** resets them. See [Filters and sorting](filters-and-sorting.md).
-- **Sort**: choose Created, Updated, Title or Risk (ascending), or **Default order** (newest first).
+- **Sort**: pick one option from the sort menu. Each of Created, Updated, Title and Risk has both directions, for example "Created (newest first)" and "Created (oldest first)", "Title (A→Z)" and "Title (Z→A)", "Risk (high → low)" and "Risk (low → high)". The default is Created (newest first). The choice is kept in the URL (`sort=-title`).
 - **Pagination**: choose 10, 25 (default) or 50 items per page and move between pages. Changing the tab, search, filters or sort returns to page 1.
 - **Table**: shows title (a link to the item), status, risk, submitter and creation time in your local time zone.
 
