@@ -1,0 +1,32 @@
+.PHONY: install dev format lint typecheck test e2e
+
+install:
+	cd backend && composer install
+	cd backend && { [ -f .env ] || { cp .env.example .env && php artisan key:generate; }; }
+	cd frontend && pnpm install
+	cd frontend && { [ -f .env ] || cp .env.example .env; }
+	cd frontend && pnpm exec playwright install chromium
+
+dev:
+	@trap 'kill 0' INT TERM EXIT; \
+	(cd backend && php artisan serve --port=8000) & \
+	(cd frontend && pnpm dev --port 5173) & \
+	wait
+
+format:
+	cd backend && ./vendor/bin/pint
+	cd frontend && pnpm format
+
+lint:
+	cd backend && ./vendor/bin/pint --test
+	cd frontend && pnpm lint
+
+typecheck:
+	cd frontend && pnpm typecheck
+
+test:
+	cd backend && php artisan test
+	cd frontend && pnpm test
+
+e2e:
+	cd frontend && pnpm e2e
