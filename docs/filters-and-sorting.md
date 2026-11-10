@@ -16,7 +16,7 @@ How the filter and sort registry works, what is available today, and how to add 
 
 ```php
 return [
-    'filters' => [StatusFilter::class, RiskFilter::class, SubmitterFilter::class, CreatedFromFilter::class, CreatedToFilter::class],
+    'filters' => [StatusFilter::class, RiskFilter::class, SubmitterFilter::class, CreatedFromFilter::class, CreatedToFilter::class, ReviewedFromFilter::class, ReviewedToFilter::class],
     'sorts' => [CreatedAtSort::class, UpdatedAtSort::class, TitleSort::class, RiskSort::class, StatusSort::class, SubmitterSort::class],
 ];
 ```
@@ -26,7 +26,7 @@ return [
 - `ListItemsRequest` validates `filter[<key>]` with the filter's `rules()`, rejects unknown filter keys, and accepts `sort` values that are a registered key with an optional `-` prefix.
 - `ItemQuery` runs, in order: the API-only state scope (default `all`), search, each active filter's `apply()`, sort, pagination.
 - `GET /api/items/filters` returns each filter's `meta()` and each sort's `key` and `label`.
-- The queue UI builds its controls from that response, so a new filter or sort shows up with no frontend change. `select` filters render as dropdowns, `date` as a date input and `text` as a text input. The sortable column headers come from the sorts list: a header is clickable when its key is registered.
+- The queue UI builds its controls from that response, so a new filter or sort shows up with no frontend change. `select` filters render as dropdowns, `date` as a date input and `text` as a text input. Filters without a `group` go on one row (Status, Risk and Submitter, with the search box at its end); filters that share a `group` get their own labelled row below it (see [Filter groups](#filter-groups)). The sortable column headers come from the sorts list: a header is clickable when its key is registered.
 
 A filter implements `App\Queries\Filters\Contracts\Filter`:
 
@@ -35,7 +35,7 @@ A filter implements `App\Queries\Filters\Contracts\Filter`:
 | `key()` | The name used in `filter[<key>]`. |
 | `rules()` | Laravel validation rules for the value. |
 | `apply(Collection $items, mixed $value)` | Returns the matching items. Only called for non-empty values. |
-| `meta()` | `key`, `label`, `type` (`select`, `date` or `text`) and, for `select`, `options` as `value`/`label` pairs. |
+| `meta()` | `key`, `label`, `type` (`select`, `date` or `text`) and, for `select`, `options` as `value`/`label` pairs. Optionally `group` and `group_label` to put the filter in a labelled row. |
 
 A sort implements `App\Queries\Sorts\Contracts\Sort`:
 
@@ -57,8 +57,16 @@ Query parameters are sent as `filter[<key>]=<value>`.
 | `status` | select | `pending`, `approved`, `rejected` | Exact status match. |
 | `risk` | select | `low`, `medium`, `high`, `none` | Exact risk; `none` matches items with no risk. |
 | `submitter` | select | A user id from the options | Keeps items submitted by that person. The options are the people who have submitted at least one item, sorted by name (value is the user id, label is the name). An id not in the options is rejected with `422`. |
-| `created_from` | date | `YYYY-MM-DD` | Created at or after the start of that UTC day. |
-| `created_to` | date | `YYYY-MM-DD` | Created at or before the end of that UTC day; must not be earlier than `created_from`. |
+| `created_from` | date | `YYYY-MM-DD` | Created at or after the start of that UTC day. Group `created_at` ("Created at"), label "From". |
+| `created_to` | date | `YYYY-MM-DD` | Created at or before the end of that UTC day; must not be earlier than `created_from`. Group `created_at`, label "To". |
+| `reviewed_from` | date | `YYYY-MM-DD` | The item's latest review is at or after the start of that UTC day. Unreviewed items are excluded. Group `reviewed_at` ("Reviewed at"), label "From". |
+| `reviewed_to` | date | `YYYY-MM-DD` | The item's latest review is at or before the end of that UTC day; must not be earlier than `reviewed_from`. Unreviewed items are excluded. Group `reviewed_at`, label "To". |
+
+### Filter groups
+
+`group` and `group_label` in a filter's `meta()` tell the UI to render related filters together. The UI keeps filters without a `group` on the main row, then draws one row per distinct `group` value, headed by its `group_label` (the `group` key is the fallback heading), in registry order. Members of a group should have short labels, since the row heading supplies the context: the date controls are named "Created at from", "Reviewed at to" and so on for screen readers.
+
+The reviewed filters use `LatestReviewDates`, a scoped helper that reads the reviews for the items being filtered once per request, so `reviewed_from` and `reviewed_to` share one read. It takes the latest review per item; items with no review have no date and never match.
 
 ### Worked example: the submitter filter
 
@@ -171,7 +179,9 @@ Example: a text filter that keeps items whose title starts with a given prefix, 
    php artisan test --filter=TitlePrefixFilter
    ```
 
-Unknown keys keep returning `422`, and the queue UI shows the new text input automatically. For a dropdown, return `'type' => 'select'` with `options` and validate with `Rule::in(...)` or `Rule::enum(...)`, as `SubmitterFilter` does.
+Unknown keys keep returning `422`, and the queue UI shows the new text input automatically.
+
+To add a related pair of filters as a labelled row (for example a `title_length` minimum and maximum), return the same `group` and a `group_label` from both `meta()` methods, as `CreatedFromFilter` does with `'group' => 'created_at'` and `'group_label' => 'Created at'`, and give each a short label such as `Min` or `Max`. Register both classes in `backend/config/item_query.php`; no frontend change is needed. For a dropdown, return `'type' => 'select'` with `options` and validate with `Rule::in(...)` or `Rule::enum(...)`, as `SubmitterFilter` does.
 
 ## Add a new sort
 

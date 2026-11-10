@@ -15,7 +15,7 @@ How to submit items, work the review queue and review items one at a time or in 
 
 Open http://localhost:5173. There is no sign-in: anyone who can reach the app can use it. Instead of an account, you type your name when you submit an item or review one. See [Identity and names](identity-and-names.md) for how names are matched, and for the note that nothing stops someone from typing another person's name.
 
-The header has two links: **Queue** and **Submit**.
+The header has two links, **Queue** and **Submit**, and a theme button at the far right. The app follows your system's light or dark theme until you click the button to choose one; your choice is remembered in the browser (`localStorage` key `review-queue-theme`) and is used on your next visit.
 
 ## Submitting an item
 
@@ -30,7 +30,12 @@ Problems are shown under the field they belong to, for example "Your name must b
 The queue is at `/items`. It shows all items by default, newest first. Everything you set here is stored in the URL, so you can copy the address to share the exact view and it survives a reload.
 
 - **Search**: the search box sits at the end of the filter row. It matches title and description, case-insensitive, up to 100 characters. Results update after a short pause (300 ms). The **x** button clears the search.
-- **Filters**: Status, Risk, Submitter (a dropdown of everyone who has submitted an item), Created from and Created to. The controls come from the API, so new filters appear automatically. To see only pending items, set the Status filter to Pending. **Clear filters** resets them. See [Filters and sorting](filters-and-sorting.md).
+- **Filters**: Status, Risk and Submitter (a dropdown of everyone who has submitted an item) sit on one row, with the search box at the end of it. Below them are two labelled date rows, **Created at** and **Reviewed at**, each with a **From** and a **To** date. The controls come from the API, so new filters appear automatically. To see only pending items, set the Status filter to Pending. See [Filters and sorting](filters-and-sorting.md).
+  - **Created at** keeps items created within the chosen days (UTC, both days included).
+  - **Reviewed at** uses the date of an item's latest review, also as inclusive UTC days. While either Reviewed date is set, items that have not been reviewed are left out.
+  - **To** cannot be earlier than **From**; the API rejects that combination.
+  - The Submitter options refresh each time you come back to the queue, so someone who has just submitted an item appears without reloading the page.
+- **Clear filters**: a button at the far right of the "Review Queue" title row. It appears while any filter is set and resets all filters.
 - **Sort**: click a column header; see [Sorting](#sorting).
 - **Pagination**: choose 10, 25 (default) or 50 items per page and move between pages. Changing the search, filters or sort returns to page 1.
 - **Table**: shows title (a link to the item), status, risk, submitter and creation time in your local time zone.
@@ -68,13 +73,18 @@ Sort by clicking a column header: **Title**, **Status**, **Risk**, **Submitter**
 4. Optionally choose a **Risk** (low, medium, high or no risk) and write a **Note** (up to 1000 characters).
 5. Click **Approve** or **Reject**.
 
-You cannot review an item you submitted. If the reviewer name matches an item's submitter (same name after trimming, collapsing spaces and ignoring case), that item is skipped and the rest are still reviewed.
+You cannot review an item you submitted. If the reviewer name matches the submitter of any selected item (same name after trimming, collapsing spaces and ignoring case), the bar shows an inline error under the name field before anything is sent:
+
+- One item: `You submitted “<title>”. Deselect it or use a different name.`
+- Several items: `You submitted N of the selected items: “<title>”, “<title>”, “<title>” and M more… Deselect them or use a different name.` At most three titles are listed; the " and M more" part appears only when there are more than three.
+
+**Approve** and **Reject** stay disabled until you deselect the conflicting items or change the name. Nothing is submitted in the meantime, so no part of the batch is reviewed.
 
 Results appear as toasts:
 
 - "N reviewed" for the items that were updated.
-- A warning listing what was left out, for example "2 skipped: you submitted them, 1 already reviewed". The reasons are "skipped: you submitted them", "already reviewed" and "not found". The rest of the batch still succeeds.
-- If every selected item was skipped, only the warning is shown (no "N reviewed").
+- A warning listing what was left out, for example "2 already reviewed, 1 not found". The reasons are "already reviewed" and "not found". The rest of the batch still succeeds.
+- If every selected item was left out, only the warning is shown (no "N reviewed").
 - An error toast if the whole request failed; nothing was changed and you can try again.
 
 After the review the list refreshes and the selection is cleared. An item is reviewed only once; if no risk is chosen, the item keeps whatever risk it had.
