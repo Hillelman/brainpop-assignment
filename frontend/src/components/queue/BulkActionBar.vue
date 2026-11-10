@@ -10,8 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { ApiError } from '@/api/http'
 import { toUserMessage } from '@/lib/errors'
+import { NAME_MAX, cleanName, nameError } from '@/lib/personName'
 import type { BulkReviewFailureReason, Item, ReviewDecision, RiskLevel } from '@/types/api'
 
 const props = defineProps<{ items: Item[] }>()
@@ -20,16 +23,27 @@ const emit = defineEmits<{ completed: [] }>()
 const NOTE_MAX = 1000
 const NO_RISK = '__none__'
 const REASON_LABELS: Record<BulkReviewFailureReason, string> = {
-  not_found: 'not found',
+  same_person: 'skipped: you submitted them',
   already_reviewed: 'already reviewed',
+  not_found: 'not found',
 }
 
 const risk = ref<RiskLevel | null>(null)
 const note = ref('')
+const reviewerName = ref('')
+const serverNameError = ref<string | undefined>()
 const submitting = ref(false)
+const touched = ref(false)
 
 const pendingIds = computed(() =>
   props.items.filter((i) => i.status === 'pending').map((i) => i.id),
+)
+const nameValidation = computed(() => nameError(reviewerName.value, 'Reviewer name'))
+const nameMessage = computed(
+  () => serverNameError.value ?? (touched.value ? nameValidation.value : undefined),
+)
+const canSubmit = computed(
+  () => !submitting.value && pendingIds.value.length > 0 && !nameValidation.value,
 )
 const skipped = computed(() => props.items.length - pendingIds.value.length)
 
@@ -38,7 +52,9 @@ function onRisk(value: unknown): void {
 }
 
 async function submit(decision: ReviewDecision): Promise<void> {
-  if (submitting.value || pendingIds.value.length === 0) return
+  touched.value = true
+  serverNameError.value = undefined
+  if (!canSubmit.value) return
   submitting.value = true
   try {
     const result = await bulkReview({
@@ -46,19 +62,27 @@ async function submit(decision: ReviewDecision): Promise<void> {
       decision,
       risk: risk.value,
       note: note.value.trim() || null,
+      reviewer_name: cleanName(reviewerName.value),
     })
-    toast.success(`${result.updated.length} reviewed`)
-    if (result.failed.length > 0) {
-      const counts = new Map<BulkReviewFailureReason, number>()
-      for (const f of result.failed) counts.set(f.reason, (counts.get(f.reason) ?? 0) + 1)
-      const summary = [...counts].map(([reason, n]) => `${n} ${REASON_LABELS[reason]}`).join(', ')
-      toast.warning(`${result.failed.length} could not be reviewed: ${summary}`)
+    const counts = new Map<BulkReviewFailureReason, number>()
+    for (const f of result.failed) counts.set(f.reason, (counts.get(f.reason) ?? 0) + 1)
+    const summary = [...counts].map(([reason, n]) => `${n} ${REASON_LABELS[reason]}`).join(', ')
+    if (result.updated.length > 0) {
+      toast.success(`${result.updated.length} reviewed`)
+      if (summary) toast.warning(summary)
+    } else if (summary) {
+      toast.warning(summary)
+    } else {
+      toast.success('0 reviewed')
     }
     note.value = ''
     risk.value = null
     emit('completed')
   } catch (err) {
-    toast.error(toUserMessage(err))
+    const fieldError =
+      err instanceof ApiError && err.status === 422 ? err.fieldErrors.reviewer_name?.[0] : undefined
+    if (fieldError) serverNameError.value = fieldError
+    else toast.error(toUserMessage(err))
   } finally {
     submitting.value = false
   }
@@ -75,6 +99,24 @@ async function submit(decision: ReviewDecision): Promise<void> {
       <span v-if="skipped > 0" class="text-sm text-amber-700" data-test="skip-warning">
         {{ skipped }} already reviewed and will be skipped.
       </span>
+    </div>
+    <div class="space-y-1">
+      <Input
+        v-model="reviewerName"
+        placeholder="Reviewer name"
+        aria-label="Reviewer name"
+        autocomplete="off"
+        required
+        :aria-invalid="!!nameMessage"
+        :disabled="submitting"
+        @update:model-value="serverNameError = undefined"
+      />
+      <p class="text-xs text-muted-foreground">
+        {{ cleanName(reviewerName).length }}/{{ NAME_MAX }}
+      </p>
+      <p v-if="nameMessage" class="text-sm text-destructive" data-test="error-reviewer-name">
+        {{ nameMessage }}
+      </p>
     </div>
     <div class="flex flex-col gap-2 sm:flex-row sm:items-start">
       <Select :model-value="risk ?? NO_RISK" :disabled="submitting" @update:model-value="onRisk">
@@ -97,16 +139,12 @@ async function submit(decision: ReviewDecision): Promise<void> {
         :disabled="submitting"
       />
       <div class="flex gap-2">
-        <Button
-          :disabled="submitting || pendingIds.length === 0"
-          data-test="approve"
-          @click="submit('approved')"
-        >
+        <Button :disabled="!canSubmit" data-test="approve" @click="submit('approved')">
           Approve
         </Button>
         <Button
           variant="destructive"
-          :disabled="submitting || pendingIds.length === 0"
+          :disabled="!canSubmit"
           data-test="reject"
           @click="submit('rejected')"
         >

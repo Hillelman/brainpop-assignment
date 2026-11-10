@@ -8,7 +8,6 @@ import type {
   NewItemPayload,
   Paginated,
   Review,
-  User,
 } from '@/types/api'
 
 interface Options {
@@ -60,10 +59,5 @@ export async function bulkReview(
     body: payload,
     signal,
   })
-  return res.data
-}
-
-export async function getMe({ signal }: Options = {}): Promise<User> {
-  const res = await request<Wrapped<User>>('GET', '/me', { signal })
   return res.data
 }

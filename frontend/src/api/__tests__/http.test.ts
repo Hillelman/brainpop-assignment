@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, buildQuery, request, setTokenProvider, setUnauthorizedHandler } from '@/api/http'
+import { ApiError, buildQuery, request } from '@/api/http'
 
 const fetchMock = vi.fn()
 
@@ -12,8 +12,6 @@ function jsonResponse(status: number, body: unknown): Response {
 
 beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock)
-  setTokenProvider(() => Promise.resolve('tok'))
-  setUnauthorizedHandler(null)
 })
 
 afterEach(() => {
@@ -54,14 +52,11 @@ describe('http client', () => {
     })
   })
 
-  it('calls the unauthorized handler on 401 and sends the Bearer token', async () => {
-    const onUnauthorized = vi.fn()
-    setUnauthorizedHandler(onUnauthorized)
-    fetchMock.mockResolvedValue(jsonResponse(401, { message: 'No', code: 'unauthenticated' }))
-    await expect(request('GET', '/me')).rejects.toBeInstanceOf(ApiError)
-    expect(onUnauthorized).toHaveBeenCalledOnce()
+  it('sends no Authorization header', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, { ok: true }))
+    await request('GET', '/items')
     const init = fetchMock.mock.calls[0][1] as RequestInit
-    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer tok')
+    expect(init.headers).not.toHaveProperty('Authorization')
   })
 
   it('serialises nested query params', () => {
@@ -96,14 +91,5 @@ describe('http client', () => {
     fetchMock.mockResolvedValue(jsonResponse(200, { ok: true }))
     await request('GET', '/items')
     expect(fetchMock.mock.calls[0][0]).toBe('http://api.test/api/items')
-  })
-
-  it('throws server_rejected_session when the handler reports a rejected session', async () => {
-    setUnauthorizedHandler(() => 'rejected')
-    fetchMock.mockResolvedValue(jsonResponse(401, { message: 'No', code: 'unauthenticated' }))
-    await expect(request('GET', '/items')).rejects.toMatchObject({
-      status: 401,
-      code: 'server_rejected_session',
-    })
   })
 })

@@ -1,10 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
-import { ref } from 'vue'
 import { RouterView, createMemoryHistory } from 'vue-router'
-import { setTokenProvider, setUnauthorizedHandler } from '@/api/http'
-import { createUnauthorizedHandler } from '@/lib/authRecovery'
 import { createAppRouter } from '@/router'
 
 const fetchMock = vi.fn()
@@ -20,15 +17,12 @@ function calls(fragment: string): number {
   return fetchMock.mock.calls.filter(([url]) => String(url).includes(fragment)).length
 }
 
-async function setup(signedIn: boolean) {
-  const auth = { isLoaded: ref(true), isSignedIn: ref(signedIn) }
-  const router = createAppRouter(auth, createMemoryHistory())
-  setTokenProvider(() => Promise.resolve('tok'))
-  setUnauthorizedHandler(createUnauthorizedHandler(auth, router))
-  await router.push('/items')
+async function setup(path: string) {
+  const router = createAppRouter(createMemoryHistory())
+  await router.push(path)
   const pinia = createPinia()
-  const mountQueue = () => mount(RouterView, { global: { plugins: [router, pinia] } })
-  return { router, mountQueue }
+  const mountApp = () => mount(RouterView, { global: { plugins: [router, pinia] } })
+  return { router, mountApp }
 }
 
 beforeEach(() => {
@@ -38,37 +32,34 @@ beforeEach(() => {
 
 afterEach(() => {
   fetchMock.mockReset()
-  setUnauthorizedHandler(null)
   vi.unstubAllGlobals()
   vi.unstubAllEnvs()
 })
 
-describe('QueueView with API 401 inside the real router', () => {
-  it('does not loop or navigate when Clerk is signed in', async () => {
-    fetchMock.mockImplementation(() =>
-      Promise.resolve(jsonResponse(401, { message: 'No', code: 'unauthenticated' })),
-    )
-    const { router, mountQueue } = await setup(true)
-    const wrapper = mountQueue()
-    await flushPromises()
-    await flushPromises()
-
+describe('app router without auth', () => {
+  it('opens /items directly', async () => {
+    const { router } = await setup('/items')
     expect(router.currentRoute.value.name).toBe('queue')
-    expect(calls('/items?')).toBe(1)
-    expect(calls('/items/filters')).toBeLessThanOrEqual(1)
-    expect(wrapper.get('[data-test="list-error"]').text()).toContain(
-      'The server rejected your session',
-    )
   })
 
+  it.each(['/sign-in', '/sign-in/factor-one'])('renders NotFound for %s', async (path) => {
+    const { router, mountApp } = await setup(path)
+    mountApp()
+    await flushPromises()
+    expect(router.currentRoute.value.name).toBe('not-found')
+    expect(router.currentRoute.value.fullPath).toBe(path)
+  })
+})
+
+describe('QueueView inside the real router', () => {
   it('makes one filters request across two mounts after a failure, until retry', async () => {
     fetchMock.mockImplementation(() =>
       Promise.resolve(jsonResponse(503, { message: 'x', code: 'server_error' })),
     )
-    const { mountQueue } = await setup(true)
-    mountQueue().unmount()
+    const { mountApp } = await setup('/items')
+    mountApp().unmount()
     await flushPromises()
-    const second = mountQueue()
+    const second = mountApp()
     await flushPromises()
     expect(calls('/items/filters')).toBe(1)
 
@@ -85,16 +76,16 @@ describe('QueueView with API 401 inside the real router', () => {
       Promise.resolve(
         jsonResponse(503, {
           message: 'x',
-          code: 'auth_not_configured',
-          errors: { missing: ['CLERK_JWKS_URL'] },
+          code: 'app_not_configured',
+          errors: { missing: ['APP_KEY'] },
         }),
       ),
     )
-    const { router, mountQueue } = await setup(true)
-    const wrapper = mountQueue()
+    const { router, mountApp } = await setup('/items')
+    const wrapper = mountApp()
     await flushPromises()
     const alert = wrapper.get('[data-test="list-error"]')
-    expect(alert.text()).toContain('The backend is not configured: missing CLERK_JWKS_URL')
+    expect(alert.text()).toContain('The backend is not configured: missing APP_KEY')
     expect(router.currentRoute.value.name).toBe('queue')
     expect(calls('/items?')).toBe(1)
     await alert.get('button').trigger('click')
