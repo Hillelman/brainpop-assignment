@@ -3,7 +3,6 @@
 namespace App\Queries\Filters;
 
 use App\Queries\Filters\Contracts\Filter;
-use App\Queries\QueryContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -19,7 +18,7 @@ class CreatedFromFilter implements Filter
         return ['nullable', 'date_format:Y-m-d'];
     }
 
-    public function apply(Collection $items, mixed $value, QueryContext $ctx): Collection
+    public function apply(Collection $items, mixed $value): Collection
     {
         $start = CarbonImmutable::parse((string) $value, 'UTC')->startOfDay();
 

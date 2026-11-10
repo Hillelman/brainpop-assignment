@@ -8,9 +8,16 @@ use App\Enums\ReviewDecision;
 use App\Enums\RiskLevel;
 
 it('round-trips a user with UTC ISO-8601 timestamps', function () {
-    $data = ['id' => 1, 'clerk_id' => 'c1', 'name' => 'A', 'email' => 'a@x.io', 'created_at' => '2026-01-02T03:04:05+00:00'];
+    $data = ['id' => 1, 'name' => 'A', 'created_at' => '2026-01-02T03:04:05+00:00'];
 
     expect(User::fromArray($data)->toArray())->toBe($data);
+});
+
+it('reads a legacy user row and drops its extra keys', function () {
+    $user = User::fromArray(['id' => 1, 'clerk_id' => 'c1', 'name' => 'A', 'email' => 'a@x.io', 'created_at' => '2026-01-02T03:04:05+00:00']);
+
+    expect($user->name)->toBe('A')
+        ->and($user->toArray())->toBe(['id' => 1, 'name' => 'A', 'created_at' => '2026-01-02T03:04:05+00:00']);
 });
 
 it('round-trips an item and normalises offsets to UTC', function () {

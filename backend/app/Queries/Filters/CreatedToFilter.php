@@ -4,7 +4,6 @@ namespace App\Queries\Filters;
 
 use App\Queries\Filters\Contracts\Filter;
 use App\Queries\Filters\Rules\NotBeforeFilter;
-use App\Queries\QueryContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -20,7 +19,7 @@ class CreatedToFilter implements Filter
         return ['nullable', 'date_format:Y-m-d', new NotBeforeFilter('created_from')];
     }
 
-    public function apply(Collection $items, mixed $value, QueryContext $ctx): Collection
+    public function apply(Collection $items, mixed $value): Collection
     {
         $end = CarbonImmutable::parse((string) $value, 'UTC')->endOfDay();
 

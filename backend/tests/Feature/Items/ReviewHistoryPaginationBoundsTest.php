@@ -2,24 +2,23 @@
 
 use App\Repositories\Contracts\ItemRepository;
 use App\Repositories\Contracts\UserRepository;
-use Tests\Support\ActsAsClerkUser;
 use Tests\Support\UsesTempJsonStorage;
 
-uses(ActsAsClerkUser::class, UsesTempJsonStorage::class);
+uses(UsesTempJsonStorage::class);
 
 function historyItemId(): int
 {
     return app(ItemRepository::class)->create([
         'title' => 'Item',
         'description' => 'Desc',
-        'submitter_id' => app(UserRepository::class)->upsertFromClerk('user_other', 'Other', 'o@x.io')->id,
+        'submitter_id' => app(UserRepository::class)->findOrCreateByName('Other')->id,
     ])->id;
 }
 
 it('rejects an out-of-range page with a validation error', function (string $page) {
     $id = historyItemId();
 
-    $this->actingAsClerk()->getJson("/api/items/{$id}/reviews?page={$page}")
+    $this->getJson("/api/items/{$id}/reviews?page={$page}")
         ->assertStatus(422)
         ->assertJson(['code' => 'validation_failed'])
         ->assertJsonValidationErrors('page');
@@ -28,7 +27,7 @@ it('rejects an out-of-range page with a validation error', function (string $pag
 it('returns an empty page at the maximum page', function () {
     $id = historyItemId();
 
-    $this->actingAsClerk()->getJson("/api/items/{$id}/reviews?page=100000")
+    $this->getJson("/api/items/{$id}/reviews?page=100000")
         ->assertOk()
         ->assertJsonPath('data', [])
         ->assertJsonPath('meta.total', 0)
@@ -36,6 +35,6 @@ it('returns an empty page at the maximum page', function () {
 });
 
 it('still returns 404 for an unknown item', function () {
-    $this->actingAsClerk()->getJson('/api/items/999999/reviews?page=1')
+    $this->getJson('/api/items/999999/reviews?page=1')
         ->assertNotFound();
 });

@@ -19,12 +19,12 @@ class ItemController extends Controller
 {
     public function index(ListItemsRequest $request, ItemQuery $query): AnonymousResourceCollection
     {
-        return ItemResource::collection($query->run($request->toParams(), $request->user()));
+        return ItemResource::collection($query->run($request->toParams()));
     }
 
     public function search(SearchItemsRequest $request, ItemQuery $query): AnonymousResourceCollection
     {
-        return ItemResource::collection($query->run($request->toParams(), $request->user()));
+        return ItemResource::collection($query->run($request->toParams()));
     }
 
     public function show(int $item, ItemRepository $items, ItemViewFactory $views): ItemResource
@@ -36,7 +36,7 @@ class ItemController extends Controller
 
     public function store(StoreItemRequest $request, ItemService $service, ItemViewFactory $views): JsonResponse
     {
-        $created = $service->submit($request->user(), $request->validated('title'), $request->validated('description'));
+        $created = $service->submit($request->submitterName(), $request->validated('title'), $request->validated('description'));
 
         return (new ItemResource($views->items(collect([$created]))->first()))
             ->response()

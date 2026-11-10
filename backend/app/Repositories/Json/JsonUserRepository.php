@@ -6,6 +6,7 @@ use App\Domain\Entities\User;
 use App\Repositories\Contracts\UserRepository;
 use App\Storage\CollectionTransaction;
 use App\Storage\JsonStore;
+use App\Support\PersonName;
 use Carbon\CarbonImmutable;
 
 final class JsonUserRepository implements UserRepository
@@ -14,38 +15,19 @@ final class JsonUserRepository implements UserRepository
 
     public function __construct(private readonly JsonStore $store) {}
 
-    public function findByClerkId(string $clerkId): ?User
+    public function findOrCreateByName(string $name): User
     {
-        foreach ($this->store->read(self::COLLECTION) as $record) {
-            if ($record['clerk_id'] === $clerkId) {
-                return User::fromArray($record);
-            }
-        }
+        $key = PersonName::key($name);
 
-        return null;
-    }
-
-    public function upsertFromClerk(string $clerkId, string $name, string $email): User
-    {
-        $existing = $this->findByClerkId($clerkId);
-        if ($existing?->name === $name && $existing->email === $email) {
-            return $existing;
-        }
-
-        return $this->store->transaction(self::COLLECTION, function (CollectionTransaction $tx) use ($clerkId, $name, $email): User {
+        return $this->store->transaction(self::COLLECTION, function (CollectionTransaction $tx) use ($name, $key): User {
             foreach ($tx->records() as $record) {
-                if ($record['clerk_id'] === $clerkId) {
-                    $user = User::fromArray(['name' => $name, 'email' => $email] + $record);
-                    $tx->replace($user->toArray());
-
-                    return $user;
+                if (PersonName::key((string) $record['name']) === $key) {
+                    return User::fromArray($record);
                 }
             }
 
             return User::fromArray($tx->insert([
-                'clerk_id' => $clerkId,
-                'name' => $name,
-                'email' => $email,
+                'name' => PersonName::normalize($name),
                 'created_at' => CarbonImmutable::now('UTC')->toIso8601String(),
             ]));
         });

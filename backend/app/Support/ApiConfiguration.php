@@ -1,9 +1,8 @@
 <?php
 
-namespace App\Auth;
+namespace App\Support;
 
 use App\Exceptions\AppNotConfiguredException;
-use App\Exceptions\AuthNotConfiguredException;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -13,12 +12,9 @@ class ApiConfiguration
 {
     public function hasAppKey(): bool
     {
-        return $this->isSet(config('app.key'));
-    }
+        $key = config('app.key');
 
-    public function hasClerk(): bool
-    {
-        return $this->missingClerk() === [];
+        return is_string($key) && trim($key) !== '';
     }
 
     public function storageWritable(): bool
@@ -32,16 +28,7 @@ class ApiConfiguration
     }
 
     /**
-     * @return list<string>
-     */
-    public function missingClerk(): array
-    {
-        return $this->isSet(config('clerk.jwks_url')) ? [] : ['CLERK_JWKS_URL'];
-    }
-
-    /**
      * @throws AppNotConfiguredException
-     * @throws AuthNotConfiguredException
      */
     public function assertReady(): void
     {
@@ -50,17 +37,5 @@ class ApiConfiguration
 
             throw new AppNotConfiguredException;
         }
-
-        $missing = $this->missingClerk();
-        if ($missing !== []) {
-            Log::warning('Server configuration is missing required variables.', ['missing' => $missing]);
-
-            throw new AuthNotConfiguredException($missing);
-        }
-    }
-
-    private function isSet(mixed $value): bool
-    {
-        return is_string($value) && trim($value) !== '';
     }
 }

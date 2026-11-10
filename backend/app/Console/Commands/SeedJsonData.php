@@ -20,11 +20,7 @@ use Random\Randomizer;
 #[Description('Seed the JSON storage with demo users, items and reviews')]
 class SeedJsonData extends Command
 {
-    private const USERS = [
-        ['seed_user_1', 'Alice Johnson', 'alice@example.com'],
-        ['seed_user_2', 'Bob Smith', 'bob@example.com'],
-        ['seed_user_3', 'Carol Davis', 'carol@example.com'],
-    ];
+    private const PEOPLE = ['Ana Lopez', 'Ben Carter', 'Chloe Nguyen', 'David Kim', 'Elena Rossi'];
 
     private const SUBJECTS = ['Login page', 'Checkout flow', 'Search index', 'Profile photo', 'Billing export', 'Email template', 'API gateway', 'Dashboard widget', 'Onboarding tour', 'Comment thread'];
 
@@ -58,8 +54,8 @@ class SeedJsonData extends Command
         $random = new Randomizer(new Mt19937($seed === null || $seed === '' ? null : (int) $seed));
 
         $userIds = array_map(
-            fn (array $user): int => $users->upsertFromClerk(...$user)->id,
-            self::USERS,
+            fn (string $name): int => $users->findOrCreateByName($name)->id,
+            self::PEOPLE,
         );
 
         $now = CarbonImmutable::now('UTC');
@@ -87,7 +83,8 @@ class SeedJsonData extends Command
             $decision = $status === ItemStatus::Approved ? ReviewDecision::Approved : ReviewDecision::Rejected;
             $risk = $risks[$random->getInt(0, count($risks) - 1)];
             $reviewedAt = $createdAt->addMinutes($random->getInt(1, 60 * 24));
-            $reviewerId = $userIds[($random->getInt(0, count($userIds) - 1) + 1) % count($userIds)];
+            $otherIds = array_values(array_filter($userIds, fn (int $id): bool => $id !== $submitterId));
+            $reviewerId = $otherIds[$random->getInt(0, count($otherIds) - 1)];
 
             $items->updateMany([$item->id => $item->withReview($decision, $risk, $reviewedAt)]);
             $reviews->create([

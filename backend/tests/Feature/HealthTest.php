@@ -7,7 +7,6 @@ it('reports the API as healthy', function () {
             'status' => 'ok',
             'checks' => [
                 'app_key' => true,
-                'clerk' => true,
                 'storage_writable' => true,
             ],
         ]);

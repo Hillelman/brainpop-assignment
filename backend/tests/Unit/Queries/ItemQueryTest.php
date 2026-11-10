@@ -1,10 +1,8 @@
 <?php
 
-use App\Domain\Entities\User;
 use App\Queries\ItemQuery;
 use App\Queries\ItemQueryParams;
 use App\Repositories\Contracts\ItemRepository;
-use Carbon\CarbonImmutable;
 use Tests\Support\UsesTempJsonStorage;
 use Tests\TestCase;
 
@@ -15,8 +13,7 @@ it('breaks ties by id in sort direction and keeps nulls last', function () {
     $a = $items->create(['title' => 'Same', 'description' => 'd', 'submitter_id' => 1]);
     $b = $items->create(['title' => 'same', 'description' => 'd', 'submitter_id' => 1]);
 
-    $user = new User(1, 'c', 'n', 'e', CarbonImmutable::now());
-    $ids = fn (string $sort) => app(ItemQuery::class)->run(new ItemQueryParams(sort: $sort), $user)
+    $ids = fn (string $sort) => app(ItemQuery::class)->run(new ItemQueryParams(sort: $sort))
         ->getCollection()->map(fn ($v) => $v->item->id)->all();
 
     expect($ids('title'))->toBe([$a->id, $b->id])

@@ -6,10 +6,8 @@ use App\Domain\Entities\User;
 
 interface UserRepository
 {
-    public function findByClerkId(string $clerkId): ?User;
-
-    /** Creates the user on first sight, otherwise refreshes name and email. */
-    public function upsertFromClerk(string $clerkId, string $name, string $email): User;
+    /** Finds the user whose name matches case-insensitively after whitespace normalization, creating it on first sight. */
+    public function findOrCreateByName(string $name): User;
 
     /**
      * Unknown ids are ignored and duplicates collapsed.
