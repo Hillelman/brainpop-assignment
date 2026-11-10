@@ -1,10 +1,7 @@
 import { computed, watch, type ComputedRef } from 'vue'
 import { useRoute, useRouter, type LocationQuery, type LocationQueryRaw } from 'vue-router'
 
-export type QueueState = 'pending' | 'reviewed' | 'all'
-
 export interface QueryState {
-  state: QueueState
   q: string
   filter: Record<string, string>
   sort: string
@@ -14,7 +11,6 @@ export interface QueryState {
 
 export const PER_PAGE_OPTIONS = [10, 25, 50]
 export const DEFAULT_PER_PAGE = 25
-const STATES: QueueState[] = ['pending', 'reviewed', 'all']
 const FILTER_PREFIX = 'filter['
 
 function first(value: LocationQuery[string] | undefined): string {
@@ -29,11 +25,9 @@ function parseQuery(query: LocationQuery): QueryState {
     const value = first(query[key])
     if (value) filter[key.slice(FILTER_PREFIX.length, -1)] = value
   }
-  const state = first(query.state)
   const page = Number(first(query.page))
   const perPage = Number(first(query.perPage))
   return {
-    state: STATES.find((s) => s === state) ?? 'pending',
     q: first(query.q),
     filter,
     sort: first(query.sort),
@@ -44,7 +38,6 @@ function parseQuery(query: LocationQuery): QueryState {
 
 function serialize(s: QueryState): LocationQueryRaw {
   const out: Record<string, string> = {}
-  if (s.state !== 'pending') out.state = s.state
   if (s.q) out.q = s.q
   if (s.sort) out.sort = s.sort
   if (s.page !== 1) out.page = String(s.page)

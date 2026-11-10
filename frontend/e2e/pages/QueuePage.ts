@@ -1,7 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test'
 
-type Tab = 'Pending' | 'Reviewed' | 'All'
-
 export class QueuePage {
   readonly search: Locator
   readonly dataRows: Locator
@@ -17,11 +15,6 @@ export class QueuePage {
   async goto(query = ''): Promise<void> {
     await this.page.goto(`/items${query}`)
     await expect(this.page.getByRole('heading', { name: 'Review Queue' })).toBeVisible()
-  }
-
-  async openTab(tab: Tab): Promise<void> {
-    await this.page.getByRole('tab', { name: tab }).click()
-    await expect(this.page.getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true')
   }
 
   row(title: string): Locator {
@@ -41,9 +34,8 @@ export class QueuePage {
     await this.page.getByRole('option', { name: option, exact: true }).click()
   }
 
-  async chooseSort(option: string): Promise<void> {
-    await this.page.getByRole('combobox', { name: 'Sort by' }).click()
-    await this.page.getByRole('option', { name: option, exact: true }).click()
+  async sortBy(column: string): Promise<void> {
+    await this.page.getByRole('columnheader', { name: column }).getByRole('button').click()
   }
 
   async setPerPage(perPage: number): Promise<void> {

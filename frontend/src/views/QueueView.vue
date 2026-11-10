@@ -41,7 +41,6 @@ async function onCompleted(): Promise<void> {
     <QueueToolbar
       :query="query"
       :filters="filters"
-      :sorts="sorts"
       :meta-failed="metaError !== null"
       @update="update"
       @retry-meta="retryMeta"
@@ -80,6 +79,9 @@ async function onCompleted(): Promise<void> {
         :items="items"
         :selected-ids="selection.ids.value"
         :all-selected="selection.allSelected(items.map((i) => i.id))"
+        :sorts="sorts"
+        :sort="query.sort"
+        @sort="(sort) => update({ sort })"
         @toggle="selection.toggle"
         @toggle-all="selection.toggleAll(items.map((i) => i.id))"
       />

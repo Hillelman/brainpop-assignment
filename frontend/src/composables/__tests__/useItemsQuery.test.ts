@@ -20,7 +20,7 @@ function page(title: string): Paginated<Item> {
 }
 
 function base(): QueryState {
-  return { state: 'pending', q: '', filter: {}, sort: '', page: 1, perPage: 25 }
+  return { q: '', filter: {}, sort: '', page: 1, perPage: 25 }
 }
 
 function setup(initial: QueryState = base()) {

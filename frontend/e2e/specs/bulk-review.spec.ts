@@ -14,7 +14,7 @@ test('bulk approve reviews pending items and skips an already reviewed one', asy
   await detailPage.review({ decision: 'Reject', note: 'Already handled', reviewerName })
   await detailPage.expectStatus('Rejected')
 
-  await queuePage.goto(`?state=all&q=${encodeURIComponent(suffix)}`)
+  await queuePage.goto(`?q=${encodeURIComponent(suffix)}`)
   await expect(queuePage.dataRows).toHaveCount(3)
   await queuePage.selectItems(...titles)
   await expect(page.getByText('1 already reviewed and will be skipped.')).toBeVisible()
@@ -27,7 +27,6 @@ test('bulk approve reviews pending items and skips an already reviewed one', asy
   })
   await expect(page.getByText('2 reviewed')).toBeVisible()
 
-  await queuePage.openTab('Reviewed')
   await expect(queuePage.dataRows).toHaveCount(3)
   await expect(queuePage.row(titles[0]).getByText('Approved')).toBeVisible()
   await expect(queuePage.row(titles[1]).getByText('Approved')).toBeVisible()

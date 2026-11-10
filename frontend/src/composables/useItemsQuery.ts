@@ -16,7 +16,6 @@ export function useItemsQuery(query: Ref<QueryState>) {
   const debouncedQ = useDebouncedRef(q, SEARCH_DEBOUNCE_MS)
 
   const params = computed<ItemListParams>(() => ({
-    state: query.value.state,
     filter: query.value.filter,
     sort: query.value.sort || undefined,
     page: query.value.page,

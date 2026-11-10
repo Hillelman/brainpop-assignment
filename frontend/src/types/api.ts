@@ -90,7 +90,6 @@ export interface ApiErrorBody {
 }
 
 export interface ItemListParams {
-  state?: 'pending' | 'reviewed' | 'all'
   filter?: Record<string, string | undefined>
   sort?: string
   page?: number

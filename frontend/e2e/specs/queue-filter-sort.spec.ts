@@ -5,14 +5,13 @@ test('status filter and title sort apply, sync to the URL and survive reload', a
   queuePage,
 }) => {
   await queuePage.goto()
-  await queuePage.openTab('All')
   await queuePage.chooseFilter('Status', 'Approved')
-  await queuePage.chooseSort('Title (A→Z)')
+  await queuePage.sortBy('Title')
 
   await expect(page).toHaveURL(/filter%5Bstatus%5D=approved|filter\[status\]=approved/)
-  await expect(page).toHaveURL(/sort=title/)
+  await expect(page).toHaveURL(/sort=title(&|$)/)
 
-  const assertView = async (): Promise<void> => {
+  const assertView = async (direction: 'asc' | 'desc'): Promise<void> => {
     await expect(queuePage.dataRows.first()).toBeVisible()
     const statuses = await queuePage.dataRows
       .getByText(/^(Pending|Approved|Rejected)$/)
@@ -22,13 +21,21 @@ test('status filter and title sort apply, sync to the URL and survive reload', a
 
     const titles = await queuePage.titles()
     const sorted = [...titles].sort((a, b) => a.localeCompare(b))
+    if (direction === 'desc') sorted.reverse()
     expect(titles).toEqual(sorted)
   }
 
-  await assertView()
+  await assertView('asc')
   await page.reload()
-  await expect(page).toHaveURL(/sort=title/)
-  await assertView()
+  await expect(page).toHaveURL(/sort=title(&|$)/)
+  await assertView('asc')
+
+  await queuePage.sortBy('Title')
+  await expect(page).toHaveURL(/sort=-title/)
+  await assertView('desc')
+  await page.reload()
+  await expect(page).toHaveURL(/sort=-title/)
+  await assertView('desc')
 })
 
 test('submitter filter narrows the list to that submitter', async ({
@@ -46,4 +53,32 @@ test('submitter filter narrows the list to that submitter', async ({
   await expect(page).toHaveURL(/submitter/)
   await expect(queuePage.dataRows).toHaveCount(1)
   await expect(queuePage.row(title)).toContainText(submitterName)
+})
+
+test('status and submitter headers are sortable and sync to the URL', async ({
+  page,
+  queuePage,
+}) => {
+  await queuePage.goto()
+
+  for (const [column, key] of [
+    ['Status', 'status'],
+    ['Submitter', 'submitter'],
+  ] as const) {
+    await queuePage.sortBy(column)
+    await expect(page).toHaveURL(new RegExp(`sort=${key}(&|$)`))
+    await expect(queuePage.dataRows.first()).toBeVisible()
+    await expect(page.getByRole('columnheader', { name: column })).toHaveAttribute(
+      'aria-sort',
+      'ascending',
+    )
+
+    await queuePage.sortBy(column)
+    await expect(page).toHaveURL(new RegExp(`sort=-${key}`))
+    await expect(page.getByRole('columnheader', { name: column })).toHaveAttribute(
+      'aria-sort',
+      'descending',
+    )
+    await expect(page.getByText(/could not|error/i)).toHaveCount(0)
+  }
 })

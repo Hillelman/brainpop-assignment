@@ -26,11 +26,8 @@ async function setup(url: string) {
 
 describe('useQueryState', () => {
   it('reads initial state from the URL', async () => {
-    const { api } = await setup(
-      '/items?state=reviewed&q=foo&sort=title&page=3&perPage=50&filter[risk]=high',
-    )
+    const { api } = await setup('/items?q=foo&sort=title&page=3&perPage=50&filter[risk]=high')
     expect(api.query.value).toEqual({
-      state: 'reviewed',
       q: 'foo',
       filter: { risk: 'high' },
       sort: 'title',
@@ -40,11 +37,18 @@ describe('useQueryState', () => {
   })
 
   it('normalises invalid values to defaults', async () => {
-    const { api, router } = await setup('/items?page=abc&state=nope&perPage=7')
+    const { api, router } = await setup('/items?page=abc&perPage=7')
     expect(api.query.value.page).toBe(1)
-    expect(api.query.value.state).toBe('pending')
     expect(api.query.value.perPage).toBe(25)
     expect(router.currentRoute.value.query).toEqual({})
+  })
+
+  it('does not read or write state and drops it from the URL', async () => {
+    const { api, router } = await setup('/items?state=reviewed&q=foo')
+    expect(api.query.value).not.toHaveProperty('state')
+    expect(router.currentRoute.value.query).toEqual({ q: 'foo' })
+    await api.update({ page: 2 })
+    expect(router.currentRoute.value.query).toEqual({ q: 'foo', page: '2' })
   })
 
   it('writes changes back and resets page when a filter changes', async () => {
