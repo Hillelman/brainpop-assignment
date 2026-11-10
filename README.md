@@ -1,16 +1,9 @@
 # Review Queue
 
-Review Queue is a small full-stack app where people submit items to a review queue and review them, one at a time or in bulk: approve or reject, assign a risk level and add an optional note. There is no sign-in: the app is open, and submitters and reviewers are identified only by the name they type (see [Identity and names](docs/identity-and-names.md)). The backend is a Laravel REST API that stores its data in plain JSON files (no database), and the frontend is a Vue 3 single-page app.
+Review Queue is a small full-stack app where people submit items to a review queue and review them, one at a time or in bulk: approve or reject, assign a risk level and add an optional note. Submitters and reviewers are identified only by the name they type (see [Identity and names](docs/identity-and-names.md)). The backend is a Laravel REST API that stores its data in plain JSON files (no database), and the frontend is a Vue 3 single-page app.
 
-Features:
+<img width="1164" height="668" alt="Screenshot 2026-11-10 at 19 56 34" src="https://github.com/user-attachments/assets/c0e875c2-73e7-42b6-9f15-1029dc65c417" />
 
-- Open access with named submitters and reviewers: type your name when you submit or review; no accounts, keys or tokens.
-- Submit items (name, title and description) to the queue.
-- Queue view showing all items, with a Status filter, search, filters (Status, Risk, Submitter and Created at / Reviewed at date ranges), a light/dark theme toggle, sorting by clicking the column headers (Title, Status, Risk, Submitter, Created) and pagination, all kept in the URL so views are shareable.
-- Bulk approve or reject with a reviewer name, an optional risk level and note, with clear partial-failure reporting.
-- A person cannot review an item they submitted: the form and the bulk bar show an inline error and disable the review buttons until the name or selection changes.
-- Item detail page with the full review history and a copyable link.
-- Pluggable filters and sorts: add one with a class and a config line.
 
 ## Tech stack
 
