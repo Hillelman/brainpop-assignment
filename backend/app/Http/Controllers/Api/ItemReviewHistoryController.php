@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Domain\Entities\Review;
 use App\Exceptions\ItemNotFoundException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ListItemsRequest;
 use App\Http\Resources\ReviewResource;
 use App\Queries\ItemViewFactory;
 use App\Repositories\Contracts\ItemRepository;
@@ -24,7 +25,7 @@ class ItemReviewHistoryController extends Controller
         ItemViewFactory $views,
     ): AnonymousResourceCollection {
         $params = $request->validate([
-            'page' => ['nullable', 'integer', 'min:1'],
+            'page' => ['nullable', 'integer', 'min:1', 'max:'.ListItemsRequest::MAX_PAGE],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
