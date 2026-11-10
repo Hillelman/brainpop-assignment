@@ -30,7 +30,7 @@ function result(data: Item[]): Paginated<Item> {
   return { data, meta: { current_page: 1, per_page: 25, total: data.length, last_page: 1 } }
 }
 
-async function mountView() {
+async function mountView(path = '/items') {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -38,8 +38,9 @@ async function mountView() {
       { path: '/items/:id', component: { template: '<div />' } },
     ],
   })
-  await router.push('/items')
-  return mount(QueueView, { global: { plugins: [router, createPinia()] } })
+  await router.push(path)
+  const wrapper = mount(QueueView, { global: { plugins: [router, createPinia()] } })
+  return Object.assign(wrapper, { router })
 }
 
 beforeEach(() => {
@@ -86,5 +87,33 @@ describe('QueueView', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('Filters could not be loaded')
     expect(wrapper.find('a[href="/items/7"]').exists()).toBe(true)
+  })
+
+  it('has no header Clear filters button without filters', async () => {
+    listItems.mockResolvedValue(result([item]))
+    const wrapper = await mountView()
+    await flushPromises()
+    expect(wrapper.find('[data-test="header-clear-filters"]').exists()).toBe(false)
+  })
+
+  it('shows Clear filters last in the title row when a filter is set', async () => {
+    listItems.mockResolvedValue(result([item]))
+    const wrapper = await mountView('/items?filter[status]=approved')
+    await flushPromises()
+    const button = wrapper.get('[data-test="header-clear-filters"]')
+    expect(button.text()).toBe('Clear filters')
+    const row = wrapper.get('h1').element.parentElement
+    expect(button.element.parentElement).toBe(row)
+    expect(row?.lastElementChild).toBe(button.element)
+  })
+
+  it('clears filters, keeps the search and resets the page', async () => {
+    listItems.mockResolvedValue(result([item]))
+    const wrapper = await mountView('/items?q=foo&filter[status]=approved&page=3')
+    await flushPromises()
+    await wrapper.get('[data-test="header-clear-filters"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.router.currentRoute.value.query).toEqual({ q: 'foo' })
+    expect(wrapper.find('[data-test="header-clear-filters"]').exists()).toBe(false)
   })
 })

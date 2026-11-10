@@ -24,6 +24,7 @@ const selectedItems = computed(() => items.value.filter((i) => selection.isSelec
 const isValidationError = computed(
   () => error.value instanceof ApiError && error.value.status === 422,
 )
+const hasFilters = computed(() => Object.keys(query.value.filter).length > 0)
 const hasCriteria = computed(
   () => query.value.q !== '' || Object.keys(query.value.filter).length > 0,
 )
@@ -36,7 +37,18 @@ async function onCompleted(): Promise<void> {
 
 <template>
   <section class="flex flex-col gap-4">
-    <h1 class="text-2xl font-semibold">Review Queue</h1>
+    <div class="flex min-h-8 items-center justify-between gap-2" data-test="queue-header">
+      <h1 class="text-2xl font-semibold">Review Queue</h1>
+      <Button
+        v-if="hasFilters"
+        variant="ghost"
+        size="sm"
+        data-test="header-clear-filters"
+        @click="update({ filter: {} })"
+      >
+        Clear filters
+      </Button>
+    </div>
 
     <QueueToolbar
       :query="query"

@@ -26,14 +26,11 @@ describe('FilterControls', () => {
     ])
   })
 
-  it('emits when a date changes and clears all filters', async () => {
+  it('emits when a date changes', async () => {
     const wrapper = mount(FilterControls, { props: { filters, modelValue: { risk: 'high' } } })
     await wrapper.get('input[type="date"]').setValue('2026-02-02')
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([
       { risk: 'high', created_from: '2026-02-02' },
     ])
-    const clear = wrapper.findAll('button').find((b) => b.text() === 'Clear filters')
-    await clear?.trigger('click')
-    expect(wrapper.emitted('update:modelValue')?.[1]).toEqual([{}])
   })
 })

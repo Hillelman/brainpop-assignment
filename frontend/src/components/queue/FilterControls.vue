@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -19,7 +17,6 @@ const props = defineProps<{
 const emit = defineEmits<{ 'update:modelValue': [value: Record<string, string>] }>()
 
 const ALL = '__all__'
-const hasActive = computed(() => Object.values(props.modelValue).some(Boolean))
 
 function setFilter(key: string, value: string | undefined): void {
   const next = { ...props.modelValue }
@@ -61,8 +58,5 @@ function setFilter(key: string, value: string | undefined): void {
         @update:model-value="(v) => setFilter(filter.key, String(v))"
       />
     </template>
-    <Button v-if="hasActive" variant="ghost" size="sm" @click="emit('update:modelValue', {})">
-      Clear filters
-    </Button>
   </div>
 </template>
