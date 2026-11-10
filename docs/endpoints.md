@@ -278,7 +278,7 @@ Review history of an item, newest first.
 
 | Name | Type | Required | Default | Validation |
 | --- | --- | --- | --- | --- |
-| `page` | integer | no | `1` | Minimum 1. |
+| `page` | integer | no | `1` | 1 to 100000 (max 100000). Larger values return `422`. |
 | `per_page` | integer | no | `15` | 1 to 100. |
 
 Response `200` (`links` and `meta` as in [GET /api/items](#get-apiitems)):

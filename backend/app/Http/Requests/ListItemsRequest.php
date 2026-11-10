@@ -16,7 +16,7 @@ class ListItemsRequest extends FormRequest
 
     private const DEFAULT_PER_PAGE = 15;
 
-    private const MAX_PAGE = 100000;
+    public const MAX_PAGE = 100000;
 
     public function authorize(): bool
     {
