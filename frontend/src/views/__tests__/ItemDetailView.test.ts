@@ -99,6 +99,16 @@ describe('ItemDetailView', () => {
     expect(wrapper.text()).toContain('Logo update')
   })
 
+  it('shows an inline rejected-session error on a signed-in 401 without navigating', async () => {
+    api.getItem.mockRejectedValue(new ApiError(401, 'server_rejected_session', 'x'))
+    const wrapper = await mountView()
+    await flushPromises()
+    expect(wrapper.get('[data-test="item-error"]').text()).toContain(
+      'The server rejected your session',
+    )
+    expect(wrapper.vm.$router.currentRoute.value.path).toBe('/items/7')
+  })
+
   it('shows the form for pending items and the outcome for reviewed ones', async () => {
     api.getItem.mockResolvedValue(makeItem())
     const pending = await mountView()

@@ -19,6 +19,7 @@ beforeEach(() => {
 afterEach(() => {
   fetchMock.mockReset()
   vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
 })
 
 describe('http client', () => {
@@ -78,5 +79,31 @@ describe('http client', () => {
     )
     expect(err).not.toBeInstanceOf(ApiError)
     expect(err).toMatchObject({ name: 'AbortError' })
+  })
+
+  it.each([undefined, '', '  '])(
+    'defaults the base url when VITE_API_BASE_URL is %j',
+    async (value) => {
+      vi.stubEnv('VITE_API_BASE_URL', value)
+      fetchMock.mockResolvedValue(jsonResponse(200, { ok: true }))
+      await request('GET', '/items')
+      expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:8000/api/items')
+    },
+  )
+
+  it('normalizes a trailing slash on the base url', async () => {
+    vi.stubEnv('VITE_API_BASE_URL', 'http://api.test/api/')
+    fetchMock.mockResolvedValue(jsonResponse(200, { ok: true }))
+    await request('GET', '/items')
+    expect(fetchMock.mock.calls[0][0]).toBe('http://api.test/api/items')
+  })
+
+  it('throws server_rejected_session when the handler reports a rejected session', async () => {
+    setUnauthorizedHandler(() => 'rejected')
+    fetchMock.mockResolvedValue(jsonResponse(401, { message: 'No', code: 'unauthenticated' }))
+    await expect(request('GET', '/items')).rejects.toMatchObject({
+      status: 401,
+      code: 'server_rejected_session',
+    })
   })
 })

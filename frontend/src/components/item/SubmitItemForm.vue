@@ -21,6 +21,7 @@ const title = ref('')
 const description = ref('')
 const submitted = ref(false)
 const pending = ref(false)
+const submitError = ref<string | null>(null)
 const serverErrors = reactive<Record<Field, string | undefined>>({
   title: undefined,
   description: undefined,
@@ -57,6 +58,7 @@ async function submit(): Promise<void> {
   submitted.value = true
   serverErrors.title = undefined
   serverErrors.description = undefined
+  submitError.value = null
   if (clientErrors.value.title || clientErrors.value.description) return
   pending.value = true
   try {
@@ -69,7 +71,7 @@ async function submit(): Promise<void> {
       serverErrors.description = err.fieldErrors.description?.[0]
       if (!serverErrors.title && !serverErrors.description) toast.error(toUserMessage(err))
     } else {
-      toast.error(toUserMessage(err))
+      submitError.value = toUserMessage(err)
     }
   } finally {
     pending.value = false
@@ -106,6 +108,12 @@ async function submit(): Promise<void> {
       >
         {{ errorFor('description') }}
       </p>
+    </div>
+    <div v-if="submitError" class="space-y-2" role="alert" data-test="submit-error">
+      <p class="text-sm text-destructive">{{ submitError }}</p>
+      <Button type="button" variant="outline" size="sm" :disabled="pending" @click="submit">
+        Retry
+      </Button>
     </div>
     <Button type="submit" :disabled="pending">{{ pending ? 'Submitting…' : 'Submit item' }}</Button>
   </form>

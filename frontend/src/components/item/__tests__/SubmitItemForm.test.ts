@@ -71,4 +71,22 @@ describe('SubmitItemForm', () => {
     expect(api.createItem).toHaveBeenCalledWith({ title: 'Valid title', description: 'desc' })
     expect(router.currentRoute.value.fullPath).toBe('/items/42')
   })
+
+  it('shows a non-validation failure inline with Retry, without navigating', async () => {
+    api.createItem.mockRejectedValueOnce(new ApiError(401, 'server_rejected_session', 'x'))
+    api.createItem.mockResolvedValueOnce({ id: 9 })
+    const { wrapper, router } = await mountForm()
+    await wrapper.get('#item-title').setValue('Valid title')
+    await wrapper.get('#item-description').setValue('Some text')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(wrapper.get('[data-test="submit-error"]').text()).toContain(
+      'The server rejected your session',
+    )
+    expect(router.currentRoute.value.path).toBe('/items/new')
+    await wrapper.get('[data-test="submit-error"] button').trigger('click')
+    await flushPromises()
+    expect(api.createItem).toHaveBeenCalledTimes(2)
+    expect(router.currentRoute.value.path).toBe('/items/9')
+  })
 })
