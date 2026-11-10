@@ -11,7 +11,7 @@ Review Queue is a small full-stack app where people submit items to a review que
 | --- | --- |
 | Backend | PHP 8.4+, Laravel, Pest, Pint, JSON file storage |
 | Frontend | Vue 3, Vite, TypeScript, Pinia, Vue Router, Tailwind CSS, shadcn-vue |
-| Identity | Typed names, no authentication (see [Identity and names](docs/identity-and-names.md)) |
+| Identity | Typed names, no accounts (see [Identity and names](docs/identity-and-names.md)) |
 | Tests | Pest (backend), Vitest (frontend), Playwright (end to end) |
 
 ## Prerequisites
@@ -19,7 +19,7 @@ Review Queue is a small full-stack app where people submit items to a review que
 - PHP 8.4+ and Composer: `brew install php composer`
 - Node.js 20.19+ and [pnpm](https://pnpm.io)
 
-No accounts, API keys or environment variables are needed.
+No accounts, API keys or configuration are needed.
 
 ## Install and run
 
@@ -28,20 +28,17 @@ make install
 make dev
 ```
 
-`make install` installs Composer and pnpm dependencies, creates `backend/.env` from `backend/.env.example` when it is missing and generates an `APP_KEY` only when it is empty (an existing key is never overwritten), creates `frontend/.env` when missing, seeds demo data when there is none and installs the Playwright Chromium browser. `make dev` runs the same `.env` and key check, seeds demo data when there is none, and starts both servers. The path from a fresh clone is just `make install` then `make dev`, with no keys and no manual `.env` editing. Real `.env` files are git-ignored and must never be committed. See [Configuration](docs/configuration.md).
+`make install` installs Composer and pnpm dependencies, seeds demo data when there is none and installs the Playwright Chromium browser. `make dev` seeds demo data when there is none and starts both servers. The path from a fresh clone is just `make install` then `make dev`.
 
 The equivalent manual steps:
 
 ```bash
-sh scripts/ensure-backend-env.sh
-
 cd backend
 composer install
 php artisan app:seed-json --if-empty
 
 cd ../frontend
 pnpm install
-cp .env.example .env
 ```
 
 To reset the demo data (about 50 items in mixed states), which is also the recommended fix for old data from earlier versions:
@@ -60,7 +57,7 @@ php backend/artisan app:seed-json --fresh
 
 ```bash
 make test   # backend Pest tests, then frontend Vitest tests
-make e2e    # Playwright end-to-end suite (no keys or sign-in needed)
+make e2e    # Playwright end-to-end suite (nothing to configure)
 ```
 
 Other shortcuts: `make lint`, `make format`, `make typecheck`. See [Testing](docs/testing.md) for details.
@@ -102,6 +99,5 @@ frontend/
 
 ### Development
 
-- [Configuration](docs/configuration.md): every environment variable and where it goes.
 - [Testing](docs/testing.md): test layers, helpers, how the E2E suite runs and debugging.
 - [Troubleshooting](docs/troubleshooting.md): common problems and fixes.
