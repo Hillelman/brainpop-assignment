@@ -16,7 +16,7 @@ sequenceDiagram
     participant V as View
     participant C as Composable
     participant A as API client
-    participant R as Route and EnsureAppConfigured
+    participant R as Route
     participant K as Controller
     participant F as Form Request
     participant S as Service / ItemQuery
@@ -26,7 +26,6 @@ sequenceDiagram
     V->>C: user changes search, filter, sort or page
     C->>A: listItems / searchItems (abort previous)
     A->>R: GET /api/items
-    R->>R: check APP_KEY is set
     R->>K: request
     K->>F: validate and normalise
     F-->>K: ItemQueryParams
@@ -63,7 +62,7 @@ sequenceDiagram
     K-->>A: 201 / 200 JSON
 ```
 
-There is no authentication step: no middleware identifies the caller. See [Identity and names](identity-and-names.md).
+Nothing identifies the caller: people are identified only by the names they type. See [Identity and names](identity-and-names.md).
 
 ## Backend layers
 
@@ -77,8 +76,7 @@ Route -> Controller -> Form Request (validation) -> Service (business rules)
 
 | Layer | Location | Responsibility |
 | --- | --- | --- |
-| Routes | `routes/api.php`, `routes/api/items.php` | Map URLs to controllers; `/health` is open and the item routes sit behind `EnsureAppConfigured`. |
-| Middleware | `app/Http/Middleware` | `EnsureAppConfigured` answers `503` when `APP_KEY` is missing. There is no auth middleware. |
+| Routes | `routes/api.php`, `routes/api/items.php` | Map URLs to controllers; `/health` and the item routes are all open. |
 | Controllers | `app/Http/Controllers/Api` | Thin: call a form request, a service or the query, return a resource. |
 | Form Requests | `app/Http/Requests` | Validate and normalise input, including person names (`app/Support/PersonName`). `ListItemsRequest` pulls `filter[...]` rules from every registered filter. |
 | Services | `app/Services` | Business rules: submitting an item, partial-success bulk review, the self-review rule. Both resolve the typed name through `UserRepository::findOrCreateByName`. |

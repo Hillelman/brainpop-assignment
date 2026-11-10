@@ -17,10 +17,9 @@ Reference for every HTTP endpoint of the Review Queue API.
 ## Conventions
 
 - Base URL in development: `http://localhost:8000/api`.
-- There is no authentication: no endpoint needs an `Authorization` header or any key. People are identified by the `submitter_name` and `reviewer_name` they send; see [Identity and names](identity-and-names.md).
+- No endpoint needs an `Authorization` header or any key. People are identified by the `submitter_name` and `reviewer_name` they send; see [Identity and names](identity-and-names.md).
 - Send `Accept: application/json`, and `Content-Type: application/json` for request bodies.
 - Success bodies are wrapped in `{ "data": ... }`. Paginated lists add Laravel's `links` and `meta`. The fields the UI relies on are `meta.current_page`, `meta.per_page`, `meta.total` and `meta.last_page`.
-- Every endpoint except `/api/health` returns `503` when the server is not configured: `{ "message", "code": "app_not_configured", "errors": { "missing": ["APP_KEY"] } }`. See [Troubleshooting](troubleshooting.md).
 - Errors always use `{ "message", "code", "errors"? }`; see [Errors](errors.md).
 - Timestamps are UTC ISO-8601 strings.
 - A `page` beyond the last page is not an error: it returns `200` with an empty `data` array and correct `meta`.
@@ -52,17 +51,17 @@ An **item** looks like this:
 
 ## GET /api/health
 
-Liveness and configuration check. Always `200`, even when configuration is missing. Values are never exposed.
+Liveness and storage check. Always `200`; it reports booleans only.
 
 - Parameters: none.
 
 Response `200`:
 
 ```json
-{ "status": "ok", "checks": { "app_key": true, "storage_writable": true } }
+{ "status": "ok", "checks": { "storage_writable": true } }
 ```
 
-`app_key` is `false` when `APP_KEY` is unset, and `storage_writable` is `false` when the JSON storage directory is not writable.
+`storage_writable` is `false` when the JSON storage directory (or the nearest existing parent) is not writable.
 
 ```bash
 curl http://localhost:8000/api/health
