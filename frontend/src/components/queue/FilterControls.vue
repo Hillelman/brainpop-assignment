@@ -12,6 +12,8 @@ interface FilterGroup {
 const props = defineProps<{
   filters: FilterMeta[]
   modelValue: Record<string, string>
+  showGrouped: boolean
+  groupedId: string
 }>()
 
 const uid = useId()
@@ -55,24 +57,30 @@ function setFilter(key: string, value: string | undefined): void {
       />
     </div>
     <div
-      v-for="group in groups"
-      :key="group.key"
-      role="group"
-      :aria-labelledby="`${uid}-${group.key}`"
-      class="flex flex-col gap-1 md:flex-row md:items-center md:gap-2"
-      data-test="filter-group"
+      v-if="showGrouped && groups.length"
+      :id="groupedId"
+      class="flex flex-wrap items-center gap-x-4 gap-y-2"
+      data-test="filter-groups"
     >
-      <span
-        :id="`${uid}-${group.key}`"
-        class="text-sm font-medium md:w-28 md:shrink-0"
-        data-test="filter-group-label"
+      <div
+        v-for="group in groups"
+        :key="group.key"
+        role="group"
+        :aria-labelledby="`${uid}-${group.key}`"
+        class="flex flex-wrap items-center gap-2"
+        data-test="filter-group"
       >
-        {{ group.label }}
-      </span>
-      <div class="flex flex-wrap items-center gap-2">
+        <span
+          :id="`${uid}-${group.key}`"
+          class="text-sm font-medium"
+          data-test="filter-group-label"
+        >
+          {{ group.label }}
+        </span>
         <FilterControl
           v-for="filter in group.filters"
           :key="filter.key"
+          class="w-36"
           :filter="filter"
           :value="modelValue[filter.key]"
           :accessible-name="`${group.label} ${filter.label.toLowerCase()}`"
