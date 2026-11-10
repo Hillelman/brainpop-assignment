@@ -7,7 +7,7 @@ test('status filter and title sort apply, sync to the URL and survive reload', a
   await queuePage.goto()
   await queuePage.openTab('All')
   await queuePage.chooseFilter('Status', 'Approved')
-  await queuePage.chooseSort('Title')
+  await queuePage.chooseSort('Title (A→Z)')
 
   await expect(page).toHaveURL(/filter%5Bstatus%5D=approved|filter\[status\]=approved/)
   await expect(page).toHaveURL(/sort=title/)
