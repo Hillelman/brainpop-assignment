@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { ApiError } from '@/api/http'
 import EmptyState from '@/components/common/EmptyState.vue'
 import BulkActionBar from '@/components/queue/BulkActionBar.vue'
@@ -25,6 +25,26 @@ const isValidationError = computed(
   () => error.value instanceof ApiError && error.value.status === 422,
 )
 const hasFilters = computed(() => Object.keys(query.value.filter).length > 0)
+const groupedKeys = computed(() => filters.value.filter((f) => f.group).map((f) => f.key))
+const groupedId = 'grouped-filters'
+const showGrouped = ref(false)
+let groupedInitialised = false
+
+watch(
+  groupedKeys,
+  (keys) => {
+    if (groupedInitialised || keys.length === 0) return
+    groupedInitialised = true
+    showGrouped.value = keys.some((key) => key in query.value.filter)
+  },
+  { immediate: true },
+)
+
+function toggleGrouped(): void {
+  groupedInitialised = true
+  showGrouped.value = !showGrouped.value
+}
+
 const hasCriteria = computed(
   () => query.value.q !== '' || Object.keys(query.value.filter).length > 0,
 )
@@ -37,8 +57,19 @@ async function onCompleted(): Promise<void> {
 
 <template>
   <section class="flex flex-col gap-4">
-    <div class="flex min-h-8 items-center justify-between gap-2" data-test="queue-header">
-      <h1 class="text-2xl font-semibold">Review Queue</h1>
+    <div class="flex min-h-8 items-center justify-end gap-2" data-test="queue-header">
+      <h1 class="mr-auto text-lg font-semibold whitespace-nowrap sm:text-2xl">Review Queue</h1>
+      <Button
+        v-if="groupedKeys.length"
+        variant="ghost"
+        size="sm"
+        :aria-expanded="showGrouped"
+        :aria-controls="groupedId"
+        data-test="toggle-more-filters"
+        @click="toggleGrouped"
+      >
+        {{ showGrouped ? 'Less filters' : 'More filters' }}
+      </Button>
       <Button
         v-if="hasFilters"
         variant="ghost"
@@ -54,6 +85,8 @@ async function onCompleted(): Promise<void> {
       :query="query"
       :filters="filters"
       :meta-failed="metaError !== null"
+      :show-grouped="showGrouped"
+      :grouped-id="groupedId"
       @update="update"
       @retry-meta="retryMeta"
     />

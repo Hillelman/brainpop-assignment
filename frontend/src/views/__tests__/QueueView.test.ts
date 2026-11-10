@@ -4,7 +4,7 @@ import { createPinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { ApiError } from '@/api/http'
 import QueueView from '@/views/QueueView.vue'
-import type { Item, Paginated } from '@/types/api'
+import type { FilterMeta, Item, Paginated } from '@/types/api'
 
 const listItems = vi.fn()
 const getFilters = vi.fn()
@@ -25,6 +25,31 @@ const item: Item = {
   created_at: '2026-01-01T10:00:00Z',
   updated_at: '2026-01-01T10:00:00Z',
 }
+
+const dateFilters: FilterMeta[] = [
+  {
+    key: 'created_from',
+    label: 'From',
+    type: 'date',
+    group: 'created_at',
+    group_label: 'Created at',
+  },
+  { key: 'created_to', label: 'To', type: 'date', group: 'created_at', group_label: 'Created at' },
+  {
+    key: 'reviewed_from',
+    label: 'From',
+    type: 'date',
+    group: 'reviewed_at',
+    group_label: 'Reviewed at',
+  },
+  {
+    key: 'reviewed_to',
+    label: 'To',
+    type: 'date',
+    group: 'reviewed_at',
+    group_label: 'Reviewed at',
+  },
+]
 
 function result(data: Item[]): Paginated<Item> {
   return { data, meta: { current_page: 1, per_page: 25, total: data.length, last_page: 1 } }
@@ -105,6 +130,62 @@ describe('QueueView', () => {
     const row = wrapper.get('h1').element.parentElement
     expect(button.element.parentElement).toBe(row)
     expect(row?.lastElementChild).toBe(button.element)
+  })
+
+  it('toggles the date filters, labelled More filters / Less filters', async () => {
+    listItems.mockResolvedValue(result([item]))
+    getFilters.mockResolvedValue({ filters: dateFilters, sorts: [] })
+    const wrapper = await mountView()
+    await flushPromises()
+    const toggle = wrapper.get('[data-test="toggle-more-filters"]')
+    expect(toggle.text()).toBe('More filters')
+    expect(toggle.attributes('aria-expanded')).toBe('false')
+    expect(wrapper.find('input[type="date"]').exists()).toBe(false)
+    await toggle.trigger('click')
+    expect(toggle.text()).toBe('Less filters')
+    expect(toggle.attributes('aria-expanded')).toBe('true')
+    expect(toggle.attributes('aria-controls')).toBe(
+      wrapper.get('[data-test="filter-groups"]').attributes('id'),
+    )
+    expect(wrapper.findAll('[data-test="filter-group"]')).toHaveLength(2)
+    await toggle.trigger('click')
+    expect(toggle.text()).toBe('More filters')
+    expect(wrapper.find('input[type="date"]').exists()).toBe(false)
+  })
+
+  it('starts expanded when a date filter is in the query and stays expanded after clearing', async () => {
+    listItems.mockResolvedValue(result([item]))
+    getFilters.mockResolvedValue({ filters: dateFilters, sorts: [] })
+    const wrapper = await mountView('/items?filter[created_from]=2026-01-01')
+    await flushPromises()
+    expect(wrapper.get('[data-test="toggle-more-filters"]').attributes('aria-expanded')).toBe(
+      'true',
+    )
+    await wrapper.get('[data-test="header-clear-filters"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('[data-test="toggle-more-filters"]').attributes('aria-expanded')).toBe(
+      'true',
+    )
+  })
+
+  it('places the toggle right before Clear filters, or last when it is hidden', async () => {
+    listItems.mockResolvedValue(result([item]))
+    getFilters.mockResolvedValue({ filters: dateFilters, sorts: [] })
+    const wrapper = await mountView()
+    await flushPromises()
+    const toggle = wrapper.get('[data-test="toggle-more-filters"]')
+    expect(toggle.element.parentElement?.lastElementChild).toBe(toggle.element)
+    await wrapper.router.push('/items?filter[status]=approved')
+    await flushPromises()
+    const clear = wrapper.get('[data-test="header-clear-filters"]')
+    expect(clear.element.previousElementSibling).toBe(toggle.element)
+  })
+
+  it('has no toggle without grouped filters', async () => {
+    listItems.mockResolvedValue(result([item]))
+    const wrapper = await mountView()
+    await flushPromises()
+    expect(wrapper.find('[data-test="toggle-more-filters"]').exists()).toBe(false)
   })
 
   it('clears filters, keeps the search and resets the page', async () => {

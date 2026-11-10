@@ -1,6 +1,6 @@
 # Identity and names
 
-How the app knows who submitted and who reviewed an item, without any sign-in.
+How the app knows who submitted and who reviewed an item, without accounts.
 
 ## Contents
 
@@ -14,9 +14,9 @@ How the app knows who submitted and who reviewed an item, without any sign-in.
 
 ## Security note
 
-**There is no authentication.** The API is open: no sign-in, no tokens, no sessions and no `Authorization` header. A name is just text that the person types, so anyone can type any name, including the name of someone else, and the app cannot tell the difference. The self-review rule below is a guard against honest mistakes, not a security control: someone who wants to review their own item can simply type a different name.
+**There are no accounts.** The API is open: no login, no tokens, no sessions and no `Authorization` header. A name is just text that the person types, so anyone can type any name, including the name of someone else, and the app cannot tell the difference. The self-review rule below is a guard against honest mistakes, not a security control: someone who wants to review their own item can simply type a different name.
 
-Do not expose this app on a public network or use it where real accountability is needed. Adding real authentication is out of scope here.
+Do not expose this app on a public network or use it where real accountability is needed. Adding real user accounts is out of scope here.
 
 ## How names identify people
 

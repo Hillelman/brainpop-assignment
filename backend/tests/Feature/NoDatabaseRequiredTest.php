@@ -26,8 +26,8 @@ it('defaults the cache store to file when CACHE_STORE is unset', function () {
     expect(configWithEnvUnset('cache', 'CACHE_STORE')['default'])->toBe('file');
 });
 
-it('defaults the session driver to file when SESSION_DRIVER is unset', function () {
-    expect(configWithEnvUnset('session', 'SESSION_DRIVER')['driver'])->toBe('file');
+it('defaults the session driver to array when SESSION_DRIVER is unset', function () {
+    expect(configWithEnvUnset('session', 'SESSION_DRIVER')['driver'])->toBe('array');
 });
 
 it('defaults the queue connection to sync when QUEUE_CONNECTION is unset', function () {

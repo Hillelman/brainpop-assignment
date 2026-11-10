@@ -13,7 +13,7 @@ The JSON files that hold all data, their fields and relations, and how writes st
 
 ## Files and location
 
-Data lives in `backend/storage/app/data/` (override with `JSON_STORAGE_PATH`) as three files: `users.json`, `items.json` and `reviews.json`. Each file is a JSON list of records with integer ids. A missing or empty file is treated as an empty collection and is created on first write. A `<name>.lock` sidecar file is created next to each collection for locking.
+Data lives in `backend/storage/app/data/` as three files: `users.json`, `items.json` and `reviews.json`. Each file is a JSON list of records with integer ids. A missing or empty file is treated as an empty collection and is created on first write. A `<name>.lock` sidecar file is created next to each collection for locking.
 
 ## Entity relationships
 

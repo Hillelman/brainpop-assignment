@@ -18,19 +18,8 @@ describe('toUserMessage', () => {
     expect(toUserMessage(null)).toBe(UNKNOWN_ERROR_MESSAGE)
   })
 
-  describe('configuration and network errors', () => {
+  describe('network errors', () => {
     afterEach(() => vi.unstubAllEnvs())
-
-    it('lists missing vars for app_not_configured', () => {
-      const err = new ApiError(503, 'app_not_configured', 'x', { missing: ['APP_KEY', 'DB_HOST'] })
-      expect(toUserMessage(err)).toBe('The backend is not configured: missing APP_KEY, DB_HOST')
-    })
-
-    it('falls back to generic text without a missing list', () => {
-      expect(toUserMessage(new ApiError(503, 'app_not_configured', 'x'))).toBe(
-        'The backend is not configured.',
-      )
-    })
 
     it('includes the base url for network errors', () => {
       vi.stubEnv('VITE_API_BASE_URL', 'http://api.test/api/')

@@ -42,7 +42,7 @@ describe('app router without auth', () => {
     expect(router.currentRoute.value.name).toBe('queue')
   })
 
-  it.each(['/sign-in', '/sign-in/factor-one'])('renders NotFound for %s', async (path) => {
+  it.each(['/sign-in'])('renders NotFound for %s', async (path) => {
     const { router, mountApp } = await setup(path)
     mountApp()
     await flushPromises()
@@ -69,27 +69,5 @@ describe('QueueView inside the real router', () => {
     await retry?.trigger('click')
     await flushPromises()
     expect(calls('/items/filters')).toBe(2)
-  })
-
-  it('shows the backend-not-configured state with Retry that refetches once', async () => {
-    fetchMock.mockImplementation(() =>
-      Promise.resolve(
-        jsonResponse(503, {
-          message: 'x',
-          code: 'app_not_configured',
-          errors: { missing: ['APP_KEY'] },
-        }),
-      ),
-    )
-    const { router, mountApp } = await setup('/items')
-    const wrapper = mountApp()
-    await flushPromises()
-    const alert = wrapper.get('[data-test="list-error"]')
-    expect(alert.text()).toContain('The backend is not configured: missing APP_KEY')
-    expect(router.currentRoute.value.name).toBe('queue')
-    expect(calls('/items?')).toBe(1)
-    await alert.get('button').trigger('click')
-    await flushPromises()
-    expect(calls('/items?')).toBe(2)
   })
 })

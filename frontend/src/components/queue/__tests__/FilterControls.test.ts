@@ -11,14 +11,21 @@ const filters: FilterMeta[] = [
 
 describe('FilterControls', () => {
   it('renders one control per filter', () => {
-    const wrapper = mount(FilterControls, { props: { filters, modelValue: {} } })
+    const wrapper = mount(FilterControls, {
+      props: { filters, modelValue: {}, showGrouped: true, groupedId: 'g' },
+    })
     expect(wrapper.findAll('[data-test="filter-control"]')).toHaveLength(2)
     expect(wrapper.text()).not.toContain('Clear filters')
   })
 
   it('emits the filter object when a select changes', () => {
     const wrapper = mount(FilterControls, {
-      props: { filters, modelValue: { created_from: '2026-01-01' } },
+      props: {
+        filters,
+        modelValue: { created_from: '2026-01-01' },
+        showGrouped: true,
+        groupedId: 'g',
+      },
     })
     wrapper.findComponent(Select).vm.$emit('update:modelValue', 'high')
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([
@@ -27,7 +34,9 @@ describe('FilterControls', () => {
   })
 
   it('emits when a date changes', async () => {
-    const wrapper = mount(FilterControls, { props: { filters, modelValue: { risk: 'high' } } })
+    const wrapper = mount(FilterControls, {
+      props: { filters, modelValue: { risk: 'high' }, showGrouped: true, groupedId: 'g' },
+    })
     await wrapper.get('input[type="date"]').setValue('2026-02-02')
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([
       { risk: 'high', created_from: '2026-02-02' },
@@ -65,7 +74,9 @@ const layoutFilters: FilterMeta[] = [
 
 describe('FilterControls layout', () => {
   it('puts ungrouped filters in the first row and keeps dates out of it', () => {
-    const wrapper = mount(FilterControls, { props: { filters: layoutFilters, modelValue: {} } })
+    const wrapper = mount(FilterControls, {
+      props: { filters: layoutFilters, modelValue: {}, showGrouped: true, groupedId: 'g' },
+    })
     const row = wrapper.get('[data-test="filter-row"]')
     expect(row.findAll('[aria-label]').map((n) => n.attributes('aria-label'))).toEqual([
       'Status',
@@ -75,8 +86,27 @@ describe('FilterControls layout', () => {
     expect(row.find('input[type="date"]').exists()).toBe(false)
   })
 
+  it('renders the groups side by side in one container in metadata order', () => {
+    const wrapper = mount(FilterControls, {
+      props: { filters: layoutFilters, modelValue: {}, showGrouped: true, groupedId: 'g' },
+    })
+    const container = wrapper.get('#g')
+    expect(container.findAll('[data-test="filter-group"]')).toHaveLength(2)
+    expect(container.classes()).toContain('flex-wrap')
+  })
+
+  it('does not render the groups when showGrouped is false', () => {
+    const wrapper = mount(FilterControls, {
+      props: { filters: layoutFilters, modelValue: {}, showGrouped: false, groupedId: 'g' },
+    })
+    expect(wrapper.find('#g').exists()).toBe(false)
+    expect(wrapper.find('input[type="date"]').exists()).toBe(false)
+  })
+
   it('renders one labelled row per group in order with named inputs', () => {
-    const wrapper = mount(FilterControls, { props: { filters: layoutFilters, modelValue: {} } })
+    const wrapper = mount(FilterControls, {
+      props: { filters: layoutFilters, modelValue: {}, showGrouped: true, groupedId: 'g' },
+    })
     const groups = wrapper.findAll('[data-test="filter-group"]')
     expect(groups.map((g) => g.get('[data-test="filter-group-label"]').text())).toEqual([
       'Created at',
@@ -101,7 +131,9 @@ describe('FilterControls layout', () => {
       { key: 'owner', label: 'Owner', type: 'text' },
       { key: 'due_from', label: 'From', type: 'date', group: 'due', group_label: 'Due' },
     ]
-    const wrapper = mount(FilterControls, { props: { filters: extra, modelValue: {} } })
+    const wrapper = mount(FilterControls, {
+      props: { filters: extra, modelValue: {}, showGrouped: true, groupedId: 'g' },
+    })
     expect(wrapper.get('[data-test="filter-row"]').find('input[aria-label="Owner"]').exists()).toBe(
       true,
     )
@@ -109,7 +141,9 @@ describe('FilterControls layout', () => {
   })
 
   it('renders only the first row without groups', () => {
-    const wrapper = mount(FilterControls, { props: { filters, modelValue: {} } })
+    const wrapper = mount(FilterControls, {
+      props: { filters, modelValue: {}, showGrouped: true, groupedId: 'g' },
+    })
     expect(wrapper.findAll('[data-test="filter-group"]')).toHaveLength(0)
   })
 })

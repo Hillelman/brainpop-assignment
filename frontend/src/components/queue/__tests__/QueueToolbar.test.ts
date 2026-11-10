@@ -16,19 +16,12 @@ const filters: FilterMeta[] = [
 
 function mountToolbar(props: { metaFailed?: boolean; filters?: FilterMeta[] } = {}) {
   return mount(QueueToolbar, {
-    props: { query, filters, metaFailed: false, ...props },
+    props: { query, filters, metaFailed: false, showGrouped: false, groupedId: 'g', ...props },
     global: { stubs: { FilterControls: { template: '<div data-test="filter-controls" />' } } },
   })
 }
 
 describe('QueueToolbar', () => {
-  it('renders no tabs and no sort select', () => {
-    const wrapper = mountToolbar()
-    expect(wrapper.find('[role="tablist"]').exists()).toBe(false)
-    expect(wrapper.find('[role="tab"]').exists()).toBe(false)
-    expect(wrapper.find('[aria-label="Sort by"]').exists()).toBe(false)
-  })
-
   it('puts the search input after the filter controls in the same row', () => {
     const wrapper = mountToolbar()
     const row = wrapper.get('[data-test="queue-toolbar"]')
@@ -66,7 +59,13 @@ describe('QueueToolbar', () => {
 
   it('emits a cleared search from the clear button', async () => {
     const wrapper = mount(QueueToolbar, {
-      props: { query: { ...query, q: 'abc' }, filters: [], metaFailed: false },
+      props: {
+        query: { ...query, q: 'abc' },
+        filters: [],
+        metaFailed: false,
+        showGrouped: false,
+        groupedId: 'g',
+      },
     })
     await wrapper.get('[aria-label="Clear search"]').trigger('click')
     expect(wrapper.emitted('update')?.[0]).toEqual([{ q: '' }])

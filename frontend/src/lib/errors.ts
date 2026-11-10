@@ -12,12 +12,6 @@ export const UNKNOWN_ERROR_MESSAGE = 'An unexpected error occurred. Please try a
 export function toUserMessage(err: unknown): string {
   if (err instanceof ApiError) {
     if (err.code === 'network_error') return `Cannot reach the API at ${getApiBaseUrl()}`
-    if (err.code === 'app_not_configured') {
-      const missing = err.fieldErrors.missing
-      return Array.isArray(missing) && missing.length > 0
-        ? `The backend is not configured: missing ${missing.join(', ')}`
-        : 'The backend is not configured.'
-    }
     return MESSAGES[err.code] ?? UNKNOWN_ERROR_MESSAGE
   }
   return UNKNOWN_ERROR_MESSAGE

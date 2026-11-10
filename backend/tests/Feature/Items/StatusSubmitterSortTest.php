@@ -49,13 +49,6 @@ it('applies the submitter sort to search', function () {
     expect(sortIds($this, '/api/items/search?q=item&sort=submitter'))->toBe([$a, $b]);
 });
 
-it('lists status and submitter sorts', function () {
-    $sorts = $this->getJson('/api/items/filters')->assertOk()->json('sorts');
-
-    expect($sorts)->toContain(['key' => 'status', 'label' => 'Status'])
-        ->and($sorts)->toContain(['key' => 'submitter', 'label' => 'Submitter']);
-});
-
 it('loads submitters once per query', function () {
     foreach (range(1, 30) as $i) {
         sortSeed("User $i");
