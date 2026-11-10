@@ -6,7 +6,6 @@ import type { FilterMeta, SortMeta } from '@/types/api'
 export const useFilterMetaStore = defineStore('filterMeta', () => {
   const filters = ref<FilterMeta[]>([])
   const sorts = ref<SortMeta[]>([])
-  const loaded = ref(false)
   const attempted = ref(false)
   const loading = ref(false)
   const error = shallowRef<unknown>(null)
@@ -20,7 +19,6 @@ export const useFilterMetaStore = defineStore('filterMeta', () => {
       const res = await getFilters()
       filters.value = res.filters
       sorts.value = res.sorts
-      loaded.value = true
     } catch (err) {
       error.value = err
     } finally {
@@ -28,5 +26,5 @@ export const useFilterMetaStore = defineStore('filterMeta', () => {
     }
   }
 
-  return { filters, sorts, loaded, loading, error, load }
+  return { filters, sorts, loading, error, load }
 })
